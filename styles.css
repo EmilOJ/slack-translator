@@ -111,12 +111,4 @@
   .slack-translator-loading {
     color: #b9b9ba;
   }
-
-  .slack-translator-replace-btn {
-    background-color: #007a5a;
-  }
-
-  .slack-translator-replace-btn:hover {
-    background-color: #006644;
-  }
 }

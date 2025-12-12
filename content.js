@@ -156,7 +156,7 @@
     
     insertionPoint.appendChild(translationElement);
 
-    // Translate the message from others' language to your language
+    // Translate incoming message: from others' language to your language
     translateText(messageText, othersLanguage, yourLanguage).then(function(translation) {
       if (translation && translation !== messageText) {
         translationElement.innerHTML = `
@@ -332,7 +332,7 @@
     // Show loading state
     previewElement.innerHTML = '<span class="slack-translator-loading">Translating...</span>';
 
-    // Translate from your language to others' language
+    // Translate outgoing message: from your language to others' language
     translateText(text, yourLanguage, othersLanguage).then(function(translation) {
       if (translation && translation !== text) {
         lastTranslation = translation; // Store for sending
@@ -354,14 +354,21 @@
 
   function findInputContainer(inputField) {
     // The input field is the .ql-editor, we need to find the message form container
-    // Try to find a suitable parent container
+    // Try to find a suitable parent container with better fallback handling
     let container = inputField.closest('[data-qa="message_input"]');
     if (!container) {
       container = inputField.closest('.c-wysiwyg_container');
     }
     if (!container) {
-      // Fallback: go up a few levels
-      container = inputField.parentElement?.parentElement?.parentElement;
+      container = inputField.closest('.ql-container')?.parentElement;
+    }
+    if (!container && inputField.parentElement) {
+      // Last resort fallback: go up a few levels with null checks
+      let current = inputField.parentElement;
+      for (let i = 0; i < 3 && current; i++) {
+        current = current.parentElement;
+      }
+      container = current;
     }
     return container;
   }
