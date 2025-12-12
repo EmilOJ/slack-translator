@@ -356,8 +356,13 @@
         ? 'https://api-free.deepl.com/v2/translate'
         : 'https://api.deepl.com/v2/translate';
       
-      // Map language codes to DeepL format (DeepL uses uppercase)
-      const targetLang = targetLanguage.toUpperCase();
+      // Map language codes to DeepL format
+      // For target language, DeepL requires specific variants for EN and PT
+      const deeplTargetMap = {
+        'en': 'EN-US',
+        'pt': 'PT-PT'
+      };
+      const targetLang = deeplTargetMap[targetLanguage.toLowerCase()] || targetLanguage.toUpperCase();
       
       // Build request body
       const body = new URLSearchParams({
@@ -367,6 +372,7 @@
       
       // Add source language if not auto-detect
       if (sourceLanguage !== 'auto') {
+        // For source language, DeepL accepts EN and PT without variants
         body.append('source_lang', sourceLanguage.toUpperCase());
       }
       
