@@ -5,7 +5,7 @@ chrome.runtime.onInstalled.addListener(function(details) {
     chrome.storage.sync.set({
       enabled: true,
       translateOutgoing: true,
-      translationProvider: 'mymemory',
+      translationProvider: 'deepl',
       sourceLanguage: 'auto',
       targetLanguage: 'en',
       apiKey: ''

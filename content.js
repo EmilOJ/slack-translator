@@ -9,7 +9,7 @@
   let isEnabled = true;
   let sourceLanguage = 'auto';
   let targetLanguage = 'en';
-  let translationProvider = 'mymemory';
+  let translationProvider = 'deepl';
   let apiKey = '';
   let translateOutgoing = true; // Translate outgoing messages before sending
   let processedMessages = new Set();
@@ -25,7 +25,7 @@
       isEnabled = result.enabled !== undefined ? result.enabled : true;
       sourceLanguage = result.sourceLanguage || 'auto';
       targetLanguage = result.targetLanguage || 'en';
-      translationProvider = result.translationProvider || 'mymemory';
+      translationProvider = result.translationProvider || 'deepl';
       apiKey = result.apiKey || '';
       translateOutgoing = result.translateOutgoing !== undefined ? result.translateOutgoing : true;
       
@@ -307,7 +307,9 @@
     if (!text || text.length < 2) return text;
 
     try {
-      if (translationProvider === 'chatgpt' && apiKey) {
+      if (translationProvider === 'deepl' && apiKey) {
+        return await translateWithDeepL(text);
+      } else if (translationProvider === 'chatgpt' && apiKey) {
         return await translateWithChatGPT(text);
       } else {
         return await translateWithMyMemory(text);
@@ -341,6 +343,55 @@
       throw new Error('Translation failed: Invalid response');
     } catch (error) {
       console.error('MyMemory translation error:', error);
+      throw error;
+    }
+  }
+
+  async function translateWithDeepL(text) {
+    try {
+      // Determine API endpoint based on API key type
+      // Free API keys end with ':fx', Pro keys don't
+      const isFreeApiKey = apiKey.endsWith(':fx');
+      const apiUrl = isFreeApiKey 
+        ? 'https://api-free.deepl.com/v2/translate'
+        : 'https://api.deepl.com/v2/translate';
+      
+      // Map language codes to DeepL format (DeepL uses uppercase)
+      const targetLang = targetLanguage.toUpperCase();
+      
+      // Build request body
+      const body = new URLSearchParams({
+        'text': text,
+        'target_lang': targetLang
+      });
+      
+      // Add source language if not auto-detect
+      if (sourceLanguage !== 'auto') {
+        body.append('source_lang', sourceLanguage.toUpperCase());
+      }
+      
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `DeepL-Auth-Key ${apiKey}`,
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: body.toString()
+      });
+      
+      if (!response.ok) {
+        throw new Error(`DeepL API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.translations && data.translations.length > 0) {
+        return data.translations[0].text;
+      }
+      
+      throw new Error('Translation failed: Invalid response from DeepL');
+    } catch (error) {
+      console.error('DeepL translation error:', error);
       throw error;
     }
   }

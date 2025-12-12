@@ -180,16 +180,17 @@
   <div class="setting">
     <label for="translationProvider">Translation Service</label>
     <select id="translationProvider">
+      <option value="deepl">DeepL (Requires API Key, Recommended)</option>
       <option value="mymemory">MyMemory (Free, No API Key)</option>
       <option value="chatgpt">ChatGPT (Requires API Key)</option>
     </select>
-    <div class="description">MyMemory is free and works without configuration</div>
+    <div class="description">DeepL provides high-quality translations</div>
   </div>
 
   <div id="apiKeySection">
     <div class="setting">
-      <label for="apiKey">OpenAI API Key</label>
-      <input type="text" id="apiKey" placeholder="sk-...">
+      <label for="apiKey">API Key</label>
+      <input type="text" id="apiKey" placeholder="Enter API key">
       <div class="description">Your API key is stored locally and never shared</div>
     </div>
   </div>

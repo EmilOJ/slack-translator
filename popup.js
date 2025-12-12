@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function(result) {
       enabledCheckbox.checked = result.enabled !== undefined ? result.enabled : true;
       translateOutgoingCheckbox.checked = result.translateOutgoing !== undefined ? result.translateOutgoing : true;
-      translationProviderSelect.value = result.translationProvider || 'mymemory';
+      translationProviderSelect.value = result.translationProvider || 'deepl';
       apiKeyInput.value = result.apiKey || '';
       sourceLanguageSelect.value = result.sourceLanguage || 'auto';
       targetLanguageSelect.value = result.targetLanguage || 'en';
@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Toggle API key section visibility
   function toggleApiKeySection() {
-    if (translationProviderSelect.value === 'chatgpt') {
+    if (translationProviderSelect.value === 'chatgpt' || translationProviderSelect.value === 'deepl') {
       apiKeySection.style.display = 'block';
     } else {
       apiKeySection.style.display = 'none';
@@ -49,8 +49,8 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // Validate settings
-    if (settings.translationProvider === 'chatgpt' && !settings.apiKey) {
-      showStatus('Please enter an OpenAI API key', 'error');
+    if ((settings.translationProvider === 'chatgpt' || settings.translationProvider === 'deepl') && !settings.apiKey) {
+      showStatus('Please enter an API key for the selected translation service', 'error');
       return;
     }
 
