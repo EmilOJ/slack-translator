@@ -2,6 +2,10 @@
 (function() {
   'use strict';
 
+  // Configuration constants
+  const DEBOUNCE_DELAY_MS = 500; // Wait time before translating while typing
+  const DOM_UPDATE_DELAY_MS = 50; // Wait for DOM updates before sending
+
   let isEnabled = true;
   let sourceLanguage = 'auto';
   let targetLanguage = 'en';
@@ -247,7 +251,7 @@
     // Debounce translation
     debounceTimer = setTimeout(function() {
       showTranslationPreview(inputField, currentValue.trim());
-    }, 500);
+    }, DEBOUNCE_DELAY_MS);
   }
 
   function showTranslationPreview(inputField, text) {
@@ -315,19 +319,30 @@
   }
 
   async function translateWithMyMemory(text) {
-    const sourceLang = sourceLanguage === 'auto' ? '' : sourceLanguage;
-    const langPair = sourceLang ? `${sourceLang}|${targetLanguage}` : `en|${targetLanguage}`;
-    
-    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${langPair}`;
-    
-    const response = await fetch(url);
-    const data = await response.json();
-    
-    if (data.responseStatus === 200 && data.responseData) {
-      return data.responseData.translatedText;
+    try {
+      const sourceLang = sourceLanguage === 'auto' ? '' : sourceLanguage;
+      // When auto-detect, don't specify source language - let API detect it
+      const langPair = sourceLang ? `${sourceLang}|${targetLanguage}` : targetLanguage;
+      
+      const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${langPair}`;
+      
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error(`Translation API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.responseStatus === 200 && data.responseData) {
+        return data.responseData.translatedText;
+      }
+      
+      throw new Error('Translation failed: Invalid response');
+    } catch (error) {
+      console.error('MyMemory translation error:', error);
+      throw error;
     }
-    
-    throw new Error('Translation failed');
   }
 
   async function translateWithChatGPT(text) {
@@ -393,7 +408,7 @@
             // Replace the content with the translation
             replaceInputContent(target, lastTranslation);
             
-            // Trigger the send after a brief delay to ensure content is updated
+            // Trigger the send after DOM updates are complete
             setTimeout(function() {
               // Simulate Enter key press to send the message
               const enterEvent = new KeyboardEvent('keydown', {
@@ -410,7 +425,7 @@
               lastTranslation = '';
               lastInputValue = '';
               removePreview();
-            }, 50);
+            }, DOM_UPDATE_DELAY_MS);
           }
         }
       }
@@ -444,7 +459,7 @@
               // Replace the content with the translation
               replaceInputContent(inputField, lastTranslation);
               
-              // Trigger the send after a brief delay
+              // Trigger the send after DOM updates are complete
               setTimeout(function() {
                 button.click();
                 
@@ -452,7 +467,7 @@
                 lastTranslation = '';
                 lastInputValue = '';
                 removePreview();
-              }, 50);
+              }, DOM_UPDATE_DELAY_MS);
             }
           }, true);
         }

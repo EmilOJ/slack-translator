@@ -55,14 +55,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     chrome.storage.sync.set(settings, function() {
-      showStatus('Settings saved successfully!', 'success');
+      showStatus('Settings saved! Changes will apply immediately.', 'success');
       
-      // Reload any open Slack tabs to apply changes
-      chrome.tabs.query({ url: 'https://*.slack.com/*' }, function(tabs) {
-        tabs.forEach(function(tab) {
-          chrome.tabs.reload(tab.id);
-        });
-      });
+      // Note: Content script listens for storage changes via chrome.storage.onChanged
+      // So we don't need to reload tabs - changes apply dynamically
     });
   });
 
