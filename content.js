@@ -3,12 +3,12 @@
   'use strict';
 
   // Configuration constants
-  const DEBOUNCE_DELAY_MS = 500; // Wait time before translating while typing
+  const DEBOUNCE_DELAY_MS = 1000; // Wait time before translating while typing (increased from 500ms)
   const DOM_UPDATE_DELAY_MS = 50; // Wait for DOM updates before sending
 
   let isEnabled = true;
-  let sourceLanguage = 'auto';
-  let targetLanguage = 'en';
+  let yourLanguage = 'en'; // Your language (user's language)
+  let othersLanguage = 'auto'; // Others' language (people you're communicating with)
   let translationProvider = 'deepl';
   let apiKey = '';
   let translateOutgoing = true; // Translate outgoing messages before sending
@@ -20,11 +20,27 @@
 
   // Load settings from storage
   chrome.storage.sync.get(
-    ['enabled', 'sourceLanguage', 'targetLanguage', 'translationProvider', 'apiKey', 'translateOutgoing'],
+    ['enabled', 'yourLanguage', 'othersLanguage', 'sourceLanguage', 'targetLanguage', 'translationProvider', 'apiKey', 'translateOutgoing'],
     function(result) {
       isEnabled = result.enabled !== undefined ? result.enabled : true;
-      sourceLanguage = result.sourceLanguage || 'auto';
-      targetLanguage = result.targetLanguage || 'en';
+      
+      // Handle migration from old settings (sourceLanguage/targetLanguage) to new (yourLanguage/othersLanguage)
+      if (result.yourLanguage !== undefined) {
+        yourLanguage = result.yourLanguage;
+      } else if (result.targetLanguage !== undefined) {
+        yourLanguage = result.targetLanguage;
+      } else {
+        yourLanguage = 'en';
+      }
+      
+      if (result.othersLanguage !== undefined) {
+        othersLanguage = result.othersLanguage;
+      } else if (result.sourceLanguage !== undefined) {
+        othersLanguage = result.sourceLanguage;
+      } else {
+        othersLanguage = 'auto';
+      }
+      
       translationProvider = result.translationProvider || 'deepl';
       apiKey = result.apiKey || '';
       translateOutgoing = result.translateOutgoing !== undefined ? result.translateOutgoing : true;
@@ -46,8 +62,8 @@
           cleanup();
         }
       }
-      if (changes.sourceLanguage) sourceLanguage = changes.sourceLanguage.newValue;
-      if (changes.targetLanguage) targetLanguage = changes.targetLanguage.newValue;
+      if (changes.yourLanguage) yourLanguage = changes.yourLanguage.newValue;
+      if (changes.othersLanguage) othersLanguage = changes.othersLanguage.newValue;
       if (changes.translationProvider) translationProvider = changes.translationProvider.newValue;
       if (changes.apiKey) apiKey = changes.apiKey.newValue;
       if (changes.translateOutgoing !== undefined) translateOutgoing = changes.translateOutgoing.newValue;
@@ -140,8 +156,8 @@
     
     insertionPoint.appendChild(translationElement);
 
-    // Translate the message
-    translateText(messageText).then(function(translation) {
+    // Translate the message from others' language to your language
+    translateText(messageText, othersLanguage, yourLanguage).then(function(translation) {
       if (translation && translation !== messageText) {
         translationElement.innerHTML = `
           <span class="slack-translator-label">Translation:</span>
@@ -227,6 +243,17 @@
     inputField.addEventListener('focus', function() {
       handleInputChange(inputField);
     });
+
+    // Add keyboard shortcut for Ctrl+Enter to replace with translation
+    inputField.addEventListener('keydown', function(e) {
+      if (e.ctrlKey && e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+        if (lastTranslation) {
+          replaceInputWithTranslation(inputField);
+        }
+      }
+    });
   }
 
   function handleInputChange(inputField) {
@@ -260,59 +287,110 @@
       return;
     }
 
-    // Create or update preview element
-    if (!previewElement) {
+    // Find the input container - we need to insert in a fixed space
+    const inputContainer = findInputContainer(inputField);
+    if (!inputContainer) return;
+
+    // Create or find preview container (a fixed space above input)
+    let previewContainer = inputContainer.querySelector('.slack-translator-preview-container');
+    if (!previewContainer) {
+      previewContainer = document.createElement('div');
+      previewContainer.className = 'slack-translator-preview-container';
+      
+      // Create the preview element
       previewElement = document.createElement('div');
       previewElement.className = 'slack-translator-preview';
+      previewElement.innerHTML = '<span class="slack-translator-loading">Translating...</span>';
+      
+      // Create action buttons
+      const actionsDiv = document.createElement('div');
+      actionsDiv.className = 'slack-translator-preview-actions';
+      
+      const replaceButton = document.createElement('button');
+      replaceButton.className = 'slack-translator-replace-btn';
+      replaceButton.textContent = 'Replace (Ctrl+Enter)';
+      replaceButton.title = 'Replace your text with the translation';
+      replaceButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (lastTranslation) {
+          replaceInputWithTranslation(inputField);
+        }
+      });
+      
+      actionsDiv.appendChild(replaceButton);
+      
+      previewContainer.appendChild(previewElement);
+      previewContainer.appendChild(actionsDiv);
+      
+      // Insert at the beginning of the input container
+      inputContainer.insertBefore(previewContainer, inputContainer.firstChild);
+    } else {
+      previewElement = previewContainer.querySelector('.slack-translator-preview');
     }
 
-    previewElement.innerHTML = '<span class="slack-translator-loading">Translating preview...</span>';
+    // Show loading state
+    previewElement.innerHTML = '<span class="slack-translator-loading">Translating...</span>';
 
-    // Find where to insert the preview (above the input field)
-    // The input field is the .ql-editor, its parent is .ql-container
-    const inputContainer = inputField.parentElement;
-    if (inputContainer && !inputContainer.contains(previewElement)) {
-      inputContainer.insertBefore(previewElement, inputField);
-    }
-
-    // Translate and show preview
-    translateText(text).then(function(translation) {
+    // Translate from your language to others' language
+    translateText(text, yourLanguage, othersLanguage).then(function(translation) {
       if (translation && translation !== text) {
         lastTranslation = translation; // Store for sending
-        const label = translateOutgoing ? 'Will send:' : 'Translation:';
+        const label = translateOutgoing ? 'Will send:' : 'Preview:';
         previewElement.innerHTML = `
           <span class="slack-translator-label">${label}</span>
           <span class="slack-translator-text">${escapeHtml(translation)}</span>
         `;
       } else {
         lastTranslation = text; // No translation, use original
-        removePreview();
+        previewElement.innerHTML = '<span class="slack-translator-text" style="color: #616061; font-style: italic;">No translation needed</span>';
       }
     }).catch(function(error) {
       console.error('Preview translation error:', error);
       lastTranslation = text; // On error, use original
-      removePreview();
+      previewElement.innerHTML = '<span class="slack-translator-text" style="color: #d32f2f; font-style: italic;">Translation error</span>';
     });
   }
 
-  function removePreview() {
-    if (previewElement && previewElement.parentElement) {
-      previewElement.remove();
+  function findInputContainer(inputField) {
+    // The input field is the .ql-editor, we need to find the message form container
+    // Try to find a suitable parent container
+    let container = inputField.closest('[data-qa="message_input"]');
+    if (!container) {
+      container = inputField.closest('.c-wysiwyg_container');
     }
+    if (!container) {
+      // Fallback: go up a few levels
+      container = inputField.parentElement?.parentElement?.parentElement;
+    }
+    return container;
+  }
+
+  function replaceInputWithTranslation(inputField) {
+    if (!lastTranslation) return;
+    
+    replaceInputContent(inputField, lastTranslation);
+    removePreview();
+    lastInputValue = lastTranslation;
+  }
+
+  function removePreview() {
+    const containers = document.querySelectorAll('.slack-translator-preview-container');
+    containers.forEach(container => container.remove());
     previewElement = null;
   }
 
-  // Translation function
-  async function translateText(text) {
+  // Translation function - now takes source and target languages
+  async function translateText(text, sourceLang, targetLang) {
     if (!text || text.length < 2) return text;
 
     try {
       if (translationProvider === 'deepl' && apiKey) {
-        return await translateWithDeepL(text);
+        return await translateWithDeepL(text, sourceLang, targetLang);
       } else if (translationProvider === 'chatgpt' && apiKey) {
-        return await translateWithChatGPT(text);
+        return await translateWithChatGPT(text, sourceLang, targetLang);
       } else {
-        return await translateWithMyMemory(text);
+        return await translateWithMyMemory(text, sourceLang, targetLang);
       }
     } catch (error) {
       console.error('Translation error:', error);
@@ -320,11 +398,11 @@
     }
   }
 
-  async function translateWithMyMemory(text) {
+  async function translateWithMyMemory(text, sourceLang, targetLang) {
     try {
-      const sourceLang = sourceLanguage === 'auto' ? '' : sourceLanguage;
+      const source = sourceLang === 'auto' ? '' : sourceLang;
       // When auto-detect, don't specify source language - let API detect it
-      const langPair = sourceLang ? `${sourceLang}|${targetLanguage}` : targetLanguage;
+      const langPair = source ? `${source}|${targetLang}` : targetLang;
       
       const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${langPair}`;
       
@@ -347,7 +425,7 @@
     }
   }
 
-  async function translateWithDeepL(text) {
+  async function translateWithDeepL(text, sourceLang, targetLang) {
     try {
       // Determine API endpoint based on API key type
       // Free API keys end with ':fx', Pro keys don't
@@ -362,18 +440,18 @@
         'en': 'EN-US',
         'pt': 'PT-PT'
       };
-      const targetLang = deeplTargetMap[targetLanguage.toLowerCase()] || targetLanguage.toUpperCase();
+      const targetLangDeepL = deeplTargetMap[targetLang.toLowerCase()] || targetLang.toUpperCase();
       
       // Build request body
       const body = new URLSearchParams({
         'text': text,
-        'target_lang': targetLang
+        'target_lang': targetLangDeepL
       });
       
       // Add source language if not auto-detect
-      if (sourceLanguage !== 'auto') {
+      if (sourceLang !== 'auto') {
         // For source language, DeepL accepts EN and PT without variants
-        body.append('source_lang', sourceLanguage.toUpperCase());
+        body.append('source_lang', sourceLang.toUpperCase());
       }
       
       const response = await fetch(apiUrl, {
@@ -402,7 +480,7 @@
     }
   }
 
-  async function translateWithChatGPT(text) {
+  async function translateWithChatGPT(text, sourceLang, targetLang) {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -414,7 +492,7 @@
         messages: [
           {
             role: 'system',
-            content: `You are a translator. Translate the following text to ${targetLanguage}. Only return the translation, nothing else.`
+            content: `You are a translator. Translate the following text to ${targetLang}. Only return the translation, nothing else.`
           },
           {
             role: 'user',
