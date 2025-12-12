@@ -16,7 +16,8 @@ A Chrome extension that automatically translates Slack messages in real-time. Pe
 - Preview first, then send - ensures you can verify translation quality
 
 🔧 **Flexible Translation Backend**
-- **MyMemory API** (Default) - Free, no API key required
+- **DeepL** (Default) - High-quality translations (requires API key)
+- **MyMemory API** - Free, no API key required
 - **ChatGPT** - High-quality translations (requires OpenAI API key)
 
 🎯 **Easy to Use**
@@ -52,16 +53,22 @@ A Chrome extension that automatically translates Slack messages in real-time. Pe
 2. Configure your preferences:
    - **Enable Translation**: Master toggle for all translation features
    - **Translate Outgoing Messages**: When ON, your messages are translated before sending (default: ON)
-   - **Translation Service**: Choose between MyMemory (free) or ChatGPT (requires API key)
+   - **Translation Service**: Choose between DeepL (default, requires API key), MyMemory (free), or ChatGPT (requires API key)
    - **Source Language**: Auto-detect or select a specific language
    - **Target Language**: Choose your preferred translation language
 
-3. If using ChatGPT:
+3. If using DeepL (recommended):
+   - Get your API key from [DeepL API](https://www.deepl.com/pro-api)
+   - Enter it in the settings popup
+   - Your API key is stored locally and never shared
+   - Both free and pro API keys are supported
+
+4. If using ChatGPT:
    - Get your API key from [OpenAI Platform](https://platform.openai.com/api-keys)
    - Enter it in the settings popup
    - Your API key is stored locally and never shared
 
-4. Click "Save Settings"
+5. Click "Save Settings"
 
 ## Usage
 
@@ -128,7 +135,15 @@ A Chrome extension that automatically translates Slack messages in real-time. Pe
 
 ## Translation Backends
 
-### MyMemory (Default)
+### DeepL (Default)
+
+- **Pros**: Excellent translation quality, supports many languages, fast, reliable
+- **Cons**: Requires API key (free tier available)
+- **Best for**: Professional use, high-quality translations, international teams
+- **Cost**: Free tier available (500,000 characters/month), then pay-per-use
+- **Setup**: Get free or pro API key from [DeepL API](https://www.deepl.com/pro-api)
+
+### MyMemory
 
 - **Pros**: Free, no signup required, works immediately
 - **Cons**: Rate limited (daily limit), quality may vary
@@ -172,6 +187,12 @@ A Chrome extension that automatically translates Slack messages in real-time. Pe
 - Check your OpenAI account has credits
 - Ensure you're using a valid API key (starts with `sk-`)
 
+**DeepL not working:**
+- Verify your API key is correct
+- Check if you're using the correct API key type (free keys end with `:fx`)
+- Ensure you have remaining quota on your DeepL account
+- Check your internet connection
+
 ## Development
 
 ### Project Structure
@@ -201,7 +222,6 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Roadmap
 
-- [ ] Support for more translation services (Google Translate, DeepL)
 - [ ] Custom language pair shortcuts
 - [ ] Translation history
 - [ ] Keyboard shortcuts
@@ -209,6 +229,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 - [ ] Translation confidence indicators
 - [ ] Support for thread translations
 - [ ] Export translations
+- [x] Support for DeepL translation service
 
 ## License
 
@@ -219,6 +240,7 @@ MIT License - Feel free to use, modify, and distribute!
 Built with ❤️ for international teams everywhere.
 
 Translation services powered by:
+- [DeepL API](https://www.deepl.com/pro-api) (default)
 - [MyMemory Translation API](https://mymemory.translated.net/)
 - [OpenAI ChatGPT](https://openai.com/) (optional)
 
