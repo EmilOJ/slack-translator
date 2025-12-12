@@ -1,0 +1,30 @@
+# Node modules (if we add any build tools later)
+node_modules/
+
+# Build artifacts
+dist/
+build/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.log
+*.tmp
+.cache/
+
+# Extension packaging
+*.zip
+*.crx
+*.pem
+
+# Reference files (keep in repo but ignore changes)
+# ref/slack_main.html
