@@ -1,6 +1,7 @@
 // Popup script for Slack Translator settings
 document.addEventListener('DOMContentLoaded', function() {
   const enabledCheckbox = document.getElementById('enabled');
+  const translateOutgoingCheckbox = document.getElementById('translateOutgoing');
   const translationProviderSelect = document.getElementById('translationProvider');
   const apiKeyInput = document.getElementById('apiKey');
   const apiKeySection = document.getElementById('apiKeySection');
@@ -11,9 +12,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Load saved settings
   chrome.storage.sync.get(
-    ['enabled', 'translationProvider', 'apiKey', 'sourceLanguage', 'targetLanguage'],
+    ['enabled', 'translateOutgoing', 'translationProvider', 'apiKey', 'sourceLanguage', 'targetLanguage'],
     function(result) {
       enabledCheckbox.checked = result.enabled !== undefined ? result.enabled : true;
+      translateOutgoingCheckbox.checked = result.translateOutgoing !== undefined ? result.translateOutgoing : true;
       translationProviderSelect.value = result.translationProvider || 'mymemory';
       apiKeyInput.value = result.apiKey || '';
       sourceLanguageSelect.value = result.sourceLanguage || 'auto';
@@ -39,6 +41,7 @@ document.addEventListener('DOMContentLoaded', function() {
   saveButton.addEventListener('click', function() {
     const settings = {
       enabled: enabledCheckbox.checked,
+      translateOutgoing: translateOutgoingCheckbox.checked,
       translationProvider: translationProviderSelect.value,
       apiKey: apiKeyInput.value,
       sourceLanguage: sourceLanguageSelect.value,

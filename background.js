@@ -4,6 +4,7 @@ chrome.runtime.onInstalled.addListener(function(details) {
     // Set default settings on install
     chrome.storage.sync.set({
       enabled: true,
+      translateOutgoing: true,
       translationProvider: 'mymemory',
       sourceLanguage: 'auto',
       targetLanguage: 'en',

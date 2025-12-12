@@ -7,20 +7,23 @@
   let targetLanguage = 'en';
   let translationProvider = 'mymemory';
   let apiKey = '';
+  let translateOutgoing = true; // Translate outgoing messages before sending
   let processedMessages = new Set();
   let lastInputValue = '';
+  let lastTranslation = ''; // Store the last translation for sending
   let previewElement = null;
   let debounceTimer = null;
 
   // Load settings from storage
   chrome.storage.sync.get(
-    ['enabled', 'sourceLanguage', 'targetLanguage', 'translationProvider', 'apiKey'],
+    ['enabled', 'sourceLanguage', 'targetLanguage', 'translationProvider', 'apiKey', 'translateOutgoing'],
     function(result) {
       isEnabled = result.enabled !== undefined ? result.enabled : true;
       sourceLanguage = result.sourceLanguage || 'auto';
       targetLanguage = result.targetLanguage || 'en';
       translationProvider = result.translationProvider || 'mymemory';
       apiKey = result.apiKey || '';
+      translateOutgoing = result.translateOutgoing !== undefined ? result.translateOutgoing : true;
       
       if (isEnabled) {
         init();
@@ -43,6 +46,7 @@
       if (changes.targetLanguage) targetLanguage = changes.targetLanguage.newValue;
       if (changes.translationProvider) translationProvider = changes.translationProvider.newValue;
       if (changes.apiKey) apiKey = changes.apiKey.newValue;
+      if (changes.translateOutgoing !== undefined) translateOutgoing = changes.translateOutgoing.newValue;
     }
   });
 
@@ -51,6 +55,10 @@
     observeMessages();
     // Start observing input field for typing
     observeInputField();
+    // Intercept message sending if translateOutgoing is enabled
+    if (translateOutgoing) {
+      interceptMessageSending();
+    }
   }
 
   function cleanup() {
@@ -266,15 +274,19 @@
     // Translate and show preview
     translateText(text).then(function(translation) {
       if (translation && translation !== text) {
+        lastTranslation = translation; // Store for sending
+        const label = translateOutgoing ? 'Will send:' : 'Translation:';
         previewElement.innerHTML = `
-          <span class="slack-translator-label">Will send:</span>
+          <span class="slack-translator-label">${label}</span>
           <span class="slack-translator-text">${escapeHtml(translation)}</span>
         `;
       } else {
+        lastTranslation = text; // No translation, use original
         removePreview();
       }
     }).catch(function(error) {
       console.error('Preview translation error:', error);
+      lastTranslation = text; // On error, use original
       removePreview();
     });
   }
@@ -354,6 +366,124 @@
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  // Intercept message sending to replace with translation
+  function interceptMessageSending() {
+    // Observe for send button and Enter key presses
+    document.addEventListener('keydown', function(e) {
+      if (!isEnabled || !translateOutgoing) return;
+      
+      // Check if Enter was pressed (without Shift, which adds a new line)
+      if (e.key === 'Enter' && !e.shiftKey) {
+        const target = e.target;
+        
+        // Check if we're in a Slack input field
+        if (target.classList.contains('ql-editor') && 
+            target.getAttribute('role') === 'textbox' &&
+            target.getAttribute('contenteditable') === 'true') {
+          
+          const originalText = target.textContent.trim();
+          
+          // If we have a translation ready and it's different from original
+          if (lastTranslation && lastTranslation !== originalText && originalText) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Replace the content with the translation
+            replaceInputContent(target, lastTranslation);
+            
+            // Trigger the send after a brief delay to ensure content is updated
+            setTimeout(function() {
+              // Simulate Enter key press to send the message
+              const enterEvent = new KeyboardEvent('keydown', {
+                key: 'Enter',
+                code: 'Enter',
+                keyCode: 13,
+                which: 13,
+                bubbles: true,
+                cancelable: true
+              });
+              target.dispatchEvent(enterEvent);
+              
+              // Clear the stored translation
+              lastTranslation = '';
+              lastInputValue = '';
+              removePreview();
+            }, 50);
+          }
+        }
+      }
+    }, true); // Use capture phase to intercept before Slack's handlers
+
+    // Also observe for send button clicks
+    const observer = new MutationObserver(function() {
+      const sendButtons = document.querySelectorAll('[data-qa="texty_send_button"]');
+      
+      sendButtons.forEach(function(button) {
+        if (!button.hasAttribute('data-translator-send-attached')) {
+          button.setAttribute('data-translator-send-attached', 'true');
+          
+          button.addEventListener('click', function(e) {
+            if (!isEnabled || !translateOutgoing) return;
+            
+            // Find the associated input field
+            const form = button.closest('[data-qa="message_input"]')?.parentElement;
+            if (!form) return;
+            
+            const inputField = form.querySelector('.ql-editor[contenteditable="true"]');
+            if (!inputField) return;
+            
+            const originalText = inputField.textContent.trim();
+            
+            // If we have a translation ready
+            if (lastTranslation && lastTranslation !== originalText && originalText) {
+              e.preventDefault();
+              e.stopPropagation();
+              
+              // Replace the content with the translation
+              replaceInputContent(inputField, lastTranslation);
+              
+              // Trigger the send after a brief delay
+              setTimeout(function() {
+                button.click();
+                
+                // Clear the stored translation
+                lastTranslation = '';
+                lastInputValue = '';
+                removePreview();
+              }, 50);
+            }
+          }, true);
+        }
+      });
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+  }
+
+  function replaceInputContent(inputField, newText) {
+    // Clear existing content
+    inputField.innerHTML = '';
+    
+    // Create a paragraph with the new text
+    const p = document.createElement('p');
+    p.textContent = newText;
+    inputField.appendChild(p);
+    
+    // Place cursor at the end
+    const range = document.createRange();
+    const sel = window.getSelection();
+    range.selectNodeContents(inputField);
+    range.collapse(false);
+    sel.removeAllRanges();
+    sel.addRange(range);
+    
+    // Trigger input event so Slack knows the content changed
+    inputField.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
   console.log('Slack Translator: Content script loaded');
