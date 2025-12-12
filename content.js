@@ -81,7 +81,7 @@
       if (!isEnabled) return;
       
       // Find all message elements - looking for the message blocks that contain text
-      const messages = document.querySelectorAll('.c-message_kit__blocks[data-qa="message-text"]');
+      const messages = document.querySelectorAll('.c-message__message_blocks[data-qa="message-text"]');
       
       messages.forEach(function(messageElement) {
         processMessage(messageElement);
@@ -96,7 +96,7 @@
 
     // Process existing messages
     setTimeout(function() {
-      const messages = document.querySelectorAll('.c-message_kit__blocks[data-qa="message-text"]');
+      const messages = document.querySelectorAll('.c-message__message_blocks[data-qa="message-text"]');
       messages.forEach(function(messageElement) {
         processMessage(messageElement);
       });
@@ -180,7 +180,7 @@
   }
 
   function findInsertionPoint(messageElement) {
-    // The messageElement is the .c-message_kit__blocks container itself
+    // The messageElement is the .c-message__message_blocks container
     // We can append directly to it
     return messageElement;
   }
