@@ -173,7 +173,7 @@ Returns: "Hola"
 
 ### Message Detection
 - Uses MutationObserver to watch for DOM changes
-- Targets `.c-message_kit__blocks[data-qa="message-text"]` elements
+- Targets `.c-message__message_blocks[data-qa="message-text"]` elements
 - Extracts text from `.p-rich_text_section` children
 
 ### Input Field Detection

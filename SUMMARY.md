@@ -81,7 +81,7 @@ slack-translator/
 ### DOM Selectors Used (from slack_main.html analysis)
 
 **Messages:**
-- `.c-message_kit__blocks[data-qa="message-text"]` - Message containers
+- `.c-message__message_blocks[data-qa="message-text"]` - Message containers
 - `.p-rich_text_section` - Text content
 
 **Input Field:**
