@@ -9,6 +9,28 @@
   font-size: 13px;
   line-height: 1.4;
   color: #1d1c1d;
+  opacity: 0;
+  visibility: hidden;
+  max-height: 0;
+  overflow: hidden;
+  transition: opacity 0.2s ease, max-height 0.3s ease, margin-top 0.2s ease, padding 0.2s ease;
+}
+
+.slack-translator-translation.visible {
+  opacity: 1;
+  visibility: visible;
+  max-height: 500px;
+}
+
+/* Make message blocks clickable to show translation */
+.c-message__message_blocks[data-translator-processed="true"] {
+  cursor: pointer;
+  position: relative;
+}
+
+.c-message__message_blocks[data-translator-processed="true"]:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+  border-radius: 4px;
 }
 
 /* Preview container - fixed space that doesn't change size */
@@ -90,6 +112,10 @@
     background-color: #2c2d30;
     border-left-color: #4a90e2;
     color: #d1d2d3;
+  }
+
+  .c-message__message_blocks[data-translator-processed="true"]:hover {
+    background-color: rgba(255, 255, 255, 0.05);
   }
 
   .slack-translator-preview-container {
