@@ -11,15 +11,52 @@
   color: #1d1c1d;
 }
 
+/* Preview container - fixed space that doesn't change size */
+.slack-translator-preview-container {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background-color: #f5f5f5;
+  border-radius: 6px;
+  min-height: 50px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: background-color 0.2s ease;
+}
+
 .slack-translator-preview {
-  margin-bottom: 8px;
-  padding: 8px 12px;
-  background-color: #fff3cd;
-  border-left: 3px solid #ffc107;
-  border-radius: 4px;
   font-size: 13px;
   line-height: 1.4;
   color: #1d1c1d;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.slack-translator-preview-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.slack-translator-replace-btn {
+  padding: 4px 10px;
+  background-color: #007a5a;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.slack-translator-replace-btn:hover {
+  background-color: #006644;
+}
+
+.slack-translator-replace-btn:active {
+  transform: scale(0.98);
 }
 
 .slack-translator-label {
@@ -55,9 +92,11 @@
     color: #d1d2d3;
   }
 
+  .slack-translator-preview-container {
+    background-color: #2c2d30;
+  }
+
   .slack-translator-preview {
-    background-color: #3d3c2f;
-    border-left-color: #ffc107;
     color: #d1d2d3;
   }
 
