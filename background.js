@@ -135,17 +135,21 @@ async function translateWithDeepL(text, sourceLang, targetLang, apiKey) {
       ? 'https://api-free.deepl.com/v2/translate'
       : 'https://api.deepl.com/v2/translate';
     
+    // Normalize language codes
+    const normalizedTargetLang = targetLang.toLowerCase();
+    const normalizedSourceLang = sourceLang.toLowerCase();
+    
     // Map language codes to DeepL format
     // For target language, DeepL requires specific variants for EN and PT
     const deeplTargetMap = {
       'en': 'EN-US',
       'pt': 'PT-PT'
     };
-    const targetLangDeepL = deeplTargetMap[targetLang.toLowerCase()] || targetLang.toUpperCase();
+    const targetLangDeepL = deeplTargetMap[normalizedTargetLang] || targetLang.toUpperCase();
     
     // Add formal prefix for Japanese translations
     let textToTranslate = text;
-    if (targetLang.toLowerCase() === 'ja' || targetLang.toLowerCase() === 'japanese') {
+    if (normalizedTargetLang === 'ja' || normalizedTargetLang === 'japanese') {
       textToTranslate = '(formal): ' + text;
     }
     
@@ -156,7 +160,7 @@ async function translateWithDeepL(text, sourceLang, targetLang, apiKey) {
     });
     
     // Add source language if not auto-detect
-    if (sourceLang !== 'auto') {
+    if (normalizedSourceLang !== 'auto') {
       // For source language, DeepL accepts EN and PT without variants
       body.append('source_lang', sourceLang.toUpperCase());
     }

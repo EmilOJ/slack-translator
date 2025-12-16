@@ -88,9 +88,11 @@
       previewElement.remove();
       previewElement = null;
     }
-    // Clear the processed data attributes
-    document.querySelectorAll('[data-translator-processed]').forEach(el => {
-      el.removeAttribute('data-translator-processed');
+    // Clear the processed data attributes - only look in message containers
+    const messageContainers = document.querySelectorAll('.c-message__message_blocks, .c-virtual_list__item');
+    messageContainers.forEach(container => {
+      const processed = container.querySelectorAll('[data-translator-processed]');
+      processed.forEach(el => el.removeAttribute('data-translator-processed'));
     });
     processedMessages.clear();
   }
@@ -126,12 +128,6 @@
   function processMessage(messageElement) {
     // Check if this element has already been processed using a data attribute
     if (messageElement.getAttribute('data-translator-processed') === 'true') {
-      return;
-    }
-
-    // Check if a translation already exists in this element
-    if (messageElement.querySelector('.slack-translator-translation')) {
-      messageElement.setAttribute('data-translator-processed', 'true');
       return;
     }
 
@@ -201,8 +197,11 @@
     
     // Try to find a timestamp attribute in the container
     if (messageContainer) {
-      const tsAttr = messageContainer.querySelector('[data-ts]')?.getAttribute('data-ts');
-      if (tsAttr) return `ts_${tsAttr}`;
+      const tsElement = messageContainer.querySelector('[data-ts]');
+      if (tsElement) {
+        const tsAttr = tsElement.getAttribute('data-ts');
+        if (tsAttr) return `ts_${tsAttr}`;
+      }
       
       const idAttr = messageContainer.getAttribute('id');
       if (idAttr) return `id_${idAttr}`;
@@ -227,9 +226,11 @@
     if (text) {
       // Try to find user/sender information
       let userId = '';
-      const userElement = messageContainer?.querySelector('[data-qa*="message_sender"]');
-      if (userElement) {
-        userId = userElement.textContent.trim().substring(0, 30);
+      if (messageContainer) {
+        const userElement = messageContainer.querySelector('[data-qa*="message_sender"]');
+        if (userElement) {
+          userId = userElement.textContent.trim().substring(0, 30);
+        }
       }
       
       return `combined_${hashCode(userId + '|' + text)}`;
