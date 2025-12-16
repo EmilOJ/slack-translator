@@ -9,7 +9,11 @@
   ],
   "host_permissions": [
     "https://app.slack.com/*",
-    "https://*.slack.com/*"
+    "https://*.slack.com/*",
+    "https://api-free.deepl.com/*",
+    "https://api.deepl.com/*",
+    "https://api.openai.com/*",
+    "https://api.mymemory.translated.net/*"
   ],
   "action": {
     "default_popup": "popup.html",
