@@ -9,12 +9,17 @@
   font-size: 13px;
   line-height: 1.4;
   color: #1d1c1d;
-  display: none; /* Hidden by default */
-  transition: opacity 0.2s ease;
+  opacity: 0;
+  visibility: hidden;
+  max-height: 0;
+  overflow: hidden;
+  transition: opacity 0.2s ease, max-height 0.3s ease, margin-top 0.2s ease, padding 0.2s ease;
 }
 
 .slack-translator-translation.visible {
-  display: block;
+  opacity: 1;
+  visibility: visible;
+  max-height: 500px;
 }
 
 /* Make message blocks clickable to show translation */

@@ -169,14 +169,17 @@
     
     insertionPoint.appendChild(translationElement);
 
-    // Add click handler to toggle translation visibility
-    messageElement.addEventListener('click', function(e) {
-      // Don't trigger if clicking on links or buttons within the message
-      if (e.target.tagName === 'A' || e.target.tagName === 'BUTTON' || e.target.closest('button') || e.target.closest('a')) {
-        return;
-      }
-      translationElement.classList.toggle('visible');
-    });
+    // Add click handler to toggle translation visibility (only if not already attached)
+    if (!messageElement.hasAttribute('data-translator-click-attached')) {
+      messageElement.setAttribute('data-translator-click-attached', 'true');
+      messageElement.addEventListener('click', function(e) {
+        // Don't trigger if clicking on links or buttons within the message
+        if (e.target.tagName === 'A' || e.target.tagName === 'BUTTON' || e.target.closest('button') || e.target.closest('a')) {
+          return;
+        }
+        translationElement.classList.toggle('visible');
+      });
+    }
 
     // Translate incoming message: from others' language to your language
     translateText(messageText, othersLanguage, yourLanguage).then(function(translation) {
