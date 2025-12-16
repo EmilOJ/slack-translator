@@ -150,7 +150,7 @@ async function translateWithDeepL(text, sourceLang, targetLang, apiKey) {
     // Add formal prefix for Japanese translations
     let textToTranslate = text;
     if (normalizedTargetLang === 'ja' || normalizedTargetLang === 'japanese') {
-      textToTranslate = '(formal): ' + text;
+      textToTranslate = '(business japanese)' + text;
     }
     
     // Build request body
@@ -181,6 +181,11 @@ async function translateWithDeepL(text, sourceLang, targetLang, apiKey) {
     const data = await response.json();
     
     if (data.translations && data.translations.length > 0) {
+      // if Japanese, remove the formal prefix from the result
+      if (normalizedTargetLang === 'ja' || normalizedTargetLang === 'japanese') {
+        string_to_remove = '(ビジネス日本語）';
+        return data.translations[0].text.replace(string_to_remove, '').trim();
+      }
       return data.translations[0].text;
     }
     
