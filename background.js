@@ -131,6 +131,10 @@ async function translateWithChatGPT(text, sourceLang, targetLang, apiKey) {
     })
   });
 
+  if (!response.ok) {
+    throw new Error(`ChatGPT API error: ${response.status}`);
+  }
+
   const data = await response.json();
   if (data.choices && data.choices[0] && data.choices[0].message) {
     return data.choices[0].message.content.trim();
