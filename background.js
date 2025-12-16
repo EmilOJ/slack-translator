@@ -1,4 +1,12 @@
 // Background service worker for Slack Translator
+
+// Request queue and rate limiting
+const requestQueue = [];
+let isProcessingQueue = false;
+const RATE_LIMIT_DELAY_MS = 200; // 200ms between requests = 5 requests per second
+const MAX_RETRIES = 3;
+const INITIAL_BACKOFF_MS = 1000; // Start with 1 second backoff
+
 chrome.runtime.onInstalled.addListener(function(details) {
   if (details.reason === 'install') {
     // Set default settings on install
@@ -20,13 +28,80 @@ chrome.runtime.onInstalled.addListener(function(details) {
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   // Handle translation requests
   if (request.action === 'translate') {
-    handleTranslationRequest(request)
+    // Add request to queue
+    queueTranslationRequest(request)
       .then(result => sendResponse({ success: true, translation: result }))
       .catch(error => sendResponse({ success: false, error: error.message }));
     return true; // Keep the message channel open for async response
   }
   return true;
 });
+
+// Queue a translation request
+async function queueTranslationRequest(request) {
+  return new Promise((resolve, reject) => {
+    // Add request to queue with its resolver/rejecter
+    requestQueue.push({
+      request,
+      resolve,
+      reject,
+      retryCount: 0
+    });
+    
+    // Start processing queue if not already processing
+    if (!isProcessingQueue) {
+      processQueue();
+    }
+  });
+}
+
+// Process the request queue with rate limiting
+async function processQueue() {
+  if (isProcessingQueue) return;
+  
+  isProcessingQueue = true;
+  
+  while (requestQueue.length > 0) {
+    const queueItem = requestQueue.shift();
+    
+    try {
+      // Process the request
+      const result = await handleTranslationRequest(queueItem.request);
+      queueItem.resolve(result);
+      
+      // Wait for rate limit delay before processing next request
+      if (requestQueue.length > 0) {
+        await sleep(RATE_LIMIT_DELAY_MS);
+      }
+    } catch (error) {
+      // Check if it's a 429 error
+      if (error.message.includes('429') && queueItem.retryCount < MAX_RETRIES) {
+        // Exponential backoff
+        const backoffDelay = INITIAL_BACKOFF_MS * Math.pow(2, queueItem.retryCount);
+        console.log(`Rate limited (429), retrying in ${backoffDelay}ms (attempt ${queueItem.retryCount + 1}/${MAX_RETRIES})`);
+        
+        // Increment retry count and re-queue
+        queueItem.retryCount++;
+        
+        // Wait for backoff delay
+        await sleep(backoffDelay);
+        
+        // Add back to the front of the queue for retry
+        requestQueue.unshift(queueItem);
+      } else {
+        // If max retries exceeded or different error, reject
+        queueItem.reject(error);
+      }
+    }
+  }
+  
+  isProcessingQueue = false;
+}
+
+// Helper function for delays
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 // Handle translation requests based on provider
 async function handleTranslationRequest(request) {
@@ -68,9 +143,15 @@ async function translateWithDeepL(text, sourceLang, targetLang, apiKey) {
     };
     const targetLangDeepL = deeplTargetMap[targetLang.toLowerCase()] || targetLang.toUpperCase();
     
+    // Add formal prefix for Japanese translations
+    let textToTranslate = text;
+    if (targetLang.toLowerCase() === 'ja' || targetLang.toLowerCase() === 'japanese') {
+      textToTranslate = '(formal): ' + text;
+    }
+    
     // Build request body
     const body = new URLSearchParams({
-      'text': text,
+      'text': textToTranslate,
       'target_lang': targetLangDeepL
     });
     

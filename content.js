@@ -88,6 +88,10 @@
       previewElement.remove();
       previewElement = null;
     }
+    // Clear the processed data attributes
+    document.querySelectorAll('[data-translator-processed]').forEach(el => {
+      el.removeAttribute('data-translator-processed');
+    });
     processedMessages.clear();
   }
 
@@ -120,9 +124,21 @@
   }
 
   function processMessage(messageElement) {
+    // Check if this element has already been processed using a data attribute
+    if (messageElement.getAttribute('data-translator-processed') === 'true') {
+      return;
+    }
+
+    // Check if a translation already exists in this element
+    if (messageElement.querySelector('.slack-translator-translation')) {
+      messageElement.setAttribute('data-translator-processed', 'true');
+      return;
+    }
+
     // Create a unique identifier for this message
     const messageId = getMessageId(messageElement);
     if (!messageId || processedMessages.has(messageId)) {
+      messageElement.setAttribute('data-translator-processed', 'true');
       return;
     }
 
@@ -142,8 +158,9 @@
     messageText = messageText.trim();
     if (!messageText || messageText.length < 2) return;
 
-    // Mark as processed
+    // Mark as processed with both the Set and data attribute
     processedMessages.add(messageId);
+    messageElement.setAttribute('data-translator-processed', 'true');
 
     // Find a good place to insert the translation
     const insertionPoint = findInsertionPoint(messageElement);
@@ -173,16 +190,52 @@
   }
 
   function getMessageId(element) {
-    // Try to find a unique identifier
+    // Look for the parent message container which has more stable identifiers
+    let messageContainer = element.closest('[data-qa="virtual-list-item"]');
+    if (!messageContainer) {
+      messageContainer = element.closest('.c-virtual_list__item');
+    }
+    if (!messageContainer) {
+      messageContainer = element.closest('[id^="message-"]');
+    }
+    
+    // Try to find a timestamp attribute in the container
+    if (messageContainer) {
+      const tsAttr = messageContainer.querySelector('[data-ts]')?.getAttribute('data-ts');
+      if (tsAttr) return `ts_${tsAttr}`;
+      
+      const idAttr = messageContainer.getAttribute('id');
+      if (idAttr) return `id_${idAttr}`;
+    }
+    
+    // Try to find data-ts or id on the element itself
     const tsAttr = element.getAttribute('data-ts');
-    if (tsAttr) return tsAttr;
+    if (tsAttr) return `ts_${tsAttr}`;
     
     const idAttr = element.getAttribute('id');
-    if (idAttr) return idAttr;
+    if (idAttr) return `id_${idAttr}`;
     
-    // Use the text content as a fallback
+    // Try to find timestamp in sibling or parent elements
+    const parentWithTs = element.closest('[data-ts]');
+    if (parentWithTs) {
+      const ts = parentWithTs.getAttribute('data-ts');
+      if (ts) return `ts_${ts}`;
+    }
+    
+    // Use a combination of text content and position as a last resort
     const text = element.textContent.trim().substring(0, 100);
-    return text ? `text_${hashCode(text)}` : null;
+    if (text) {
+      // Try to find user/sender information
+      let userId = '';
+      const userElement = messageContainer?.querySelector('[data-qa*="message_sender"]');
+      if (userElement) {
+        userId = userElement.textContent.trim().substring(0, 30);
+      }
+      
+      return `combined_${hashCode(userId + '|' + text)}`;
+    }
+    
+    return null;
   }
 
   function hashCode(str) {
