@@ -21,6 +21,9 @@ Thumbs.db
 *.tmp
 .cache/
 
+# Test files (for manual testing only)
+test-*.html
+
 # Extension packaging
 *.zip
 *.crx

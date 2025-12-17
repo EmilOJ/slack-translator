@@ -1,0 +1,21 @@
+{
+  "name": "slack-translator-tests",
+  "version": "1.0.0",
+  "description": "Tests for Slack Translator Chrome Extension",
+  "scripts": {
+    "test": "jest --verbose",
+    "test:watch": "jest --watch"
+  },
+  "devDependencies": {
+    "@jest/globals": "^29.7.0",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0"
+  },
+  "jest": {
+    "testEnvironment": "jsdom",
+    "testMatch": ["**/__tests__/**/*.test.js"],
+    "collectCoverageFrom": [
+      "content.js"
+    ]
+  }
+}
