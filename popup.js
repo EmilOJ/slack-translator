@@ -1,5 +1,8 @@
 // Popup script for Slack Translator settings
 
+// Constants
+const SAVE_FEEDBACK_DURATION = 3000; // Duration to show save success feedback in milliseconds
+
 // Current UI language cache
 let currentUILanguage = 'en';
 
@@ -50,7 +53,9 @@ function getLocalizedMessage(messageName, lang) {
       'formalityDesc': 'Controls the tone of translations (formal or informal). Supported for: German, French, Italian, Spanish, Dutch, Polish, Portuguese, Japanese, and Russian.',
       'formalityDefault': 'Default',
       'formalityPreferMore': 'Prefer More Formal',
-      'formalityPreferLess': 'Prefer More Informal'
+      'formalityPreferLess': 'Prefer More Informal',
+      'settingsSavedButton': 'Settings Saved!',
+      'settingsSaveError': 'Failed to save settings. Please try again.'
     },
     'ja': {
       'extensionName': 'Slack翻訳',
@@ -95,7 +100,9 @@ function getLocalizedMessage(messageName, lang) {
       'formalityDesc': '翻訳のトーン（フォーマル・カジュアル）を制御します。対応言語：ドイツ語、フランス語、イタリア語、スペイン語、オランダ語、ポーランド語、ポルトガル語、日本語、ロシア語',
       'formalityDefault': 'デフォルト',
       'formalityPreferMore': 'フォーマル優先',
-      'formalityPreferLess': 'カジュアル優先'
+      'formalityPreferLess': 'カジュアル優先',
+      'settingsSavedButton': '設定を保存しました！',
+      'settingsSaveError': '設定の保存に失敗しました。もう一度お試しください。'
     }
   };
 
@@ -151,10 +158,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const browserLang = chrome.i18n.getUILanguage().split('-')[0];
         uiLang = (browserLang === 'ja') ? 'ja' : 'en';
       }
-      uiLanguageSelect.value = uiLang;
-      
-      // Apply localization with the determined language
+      // Apply localization with the determined language first
       localizeUI(uiLang);
+      
+      // Then set all the select values after localization to prevent browser from resetting selections when option text changes
+      uiLanguageSelect.value = uiLang;
       enabledCheckbox.checked = result.enabled !== undefined ? result.enabled : true;
       translateOutgoingCheckbox.checked = result.translateOutgoing !== undefined ? result.translateOutgoing : true;
       translationProviderSelect.value = result.translationProvider || 'deepl';
@@ -232,8 +240,25 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
+    // Disable button during save
+    saveButton.disabled = true;
+    
     chrome.storage.sync.set(settings, function() {
-      showStatus(getLocalizedMessage('settingsSaved', currentUILanguage), 'success');
+      // Check if Chrome storage API succeeded (chrome.runtime.lastError indicates API failure)
+      if (chrome.runtime.lastError) {
+        // Save failed, show error in status banner
+        showStatus(getLocalizedMessage('settingsSaveError', currentUILanguage), 'error');
+        saveButton.disabled = false;
+      } else {
+        // Save successful, update button text temporarily
+        const originalText = saveButton.textContent;
+        saveButton.textContent = getLocalizedMessage('settingsSavedButton', currentUILanguage);
+        
+        setTimeout(function() {
+          saveButton.textContent = originalText;
+          saveButton.disabled = false;
+        }, SAVE_FEEDBACK_DURATION);
+      }
       
       // Note: Content script listens for storage changes via chrome.storage.onChanged
       // So we don't need to reload tabs - changes apply dynamically

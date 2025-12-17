@@ -174,5 +174,13 @@
   "formalityPreferLess": {
     "message": "Prefer More Informal",
     "description": "Prefer more informal option"
+  },
+  "settingsSavedButton": {
+    "message": "Settings Saved!",
+    "description": "Text shown on button when settings are successfully saved"
+  },
+  "settingsSaveError": {
+    "message": "Failed to save settings. Please try again.",
+    "description": "Error message when settings fail to save"
   }
 }
