@@ -51,7 +51,8 @@ function getLocalizedMessage(messageName, lang) {
       'formalityDefault': 'Default',
       'formalityPreferMore': 'Prefer More Formal',
       'formalityPreferLess': 'Prefer More Informal',
-      'settingsSavedButton': 'Settings Saved!'
+      'settingsSavedButton': 'Settings Saved!',
+      'settingsSaveError': 'Failed to save settings. Please try again.'
     },
     'ja': {
       'extensionName': 'Slack翻訳',
@@ -97,7 +98,8 @@ function getLocalizedMessage(messageName, lang) {
       'formalityDefault': 'デフォルト',
       'formalityPreferMore': 'フォーマル優先',
       'formalityPreferLess': 'カジュアル優先',
-      'settingsSavedButton': '設定を保存しました！'
+      'settingsSavedButton': '設定を保存しました！',
+      'settingsSaveError': '設定の保存に失敗しました。もう一度お試しください。'
     }
   };
 
@@ -241,8 +243,8 @@ document.addEventListener('DOMContentLoaded', function() {
     chrome.storage.sync.set(settings, function() {
       // Check if save was successful (no chrome.runtime.lastError)
       if (chrome.runtime.lastError) {
-        // Save failed, show error
-        showStatus(getLocalizedMessage('apiKeyRequired', currentUILanguage), 'error');
+        // Save failed, show error in status banner
+        showStatus(getLocalizedMessage('settingsSaveError', currentUILanguage), 'error');
         saveButton.disabled = false;
       } else {
         // Save successful, update button text temporarily
