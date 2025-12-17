@@ -161,7 +161,7 @@ document.addEventListener('DOMContentLoaded', function() {
       // Apply localization with the determined language first
       localizeUI(uiLang);
       
-      // Then set all the select values after localization to avoid them being reset
+      // Then set all the select values after localization to prevent browser from resetting selections when option text changes
       uiLanguageSelect.value = uiLang;
       enabledCheckbox.checked = result.enabled !== undefined ? result.enabled : true;
       translateOutgoingCheckbox.checked = result.translateOutgoing !== undefined ? result.translateOutgoing : true;
@@ -244,7 +244,7 @@ document.addEventListener('DOMContentLoaded', function() {
     saveButton.disabled = true;
     
     chrome.storage.sync.set(settings, function() {
-      // Check if save was successful (no chrome.runtime.lastError)
+      // Check if Chrome storage API succeeded (chrome.runtime.lastError indicates API failure)
       if (chrome.runtime.lastError) {
         // Save failed, show error in status banner
         showStatus(getLocalizedMessage('settingsSaveError', currentUILanguage), 'error');
