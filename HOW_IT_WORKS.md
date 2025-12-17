@@ -128,16 +128,6 @@ You type in your language → See preview → Press Enter → Translated message
 │ Ready for new message    │  └─────────────────────────────────┘
 └──────────────────────────┘
 ```
-│  - Triggers send again                                     │
-└────────────────────┬────────────────────────────────────────┘
-                     │
-                     ▼
-┌─────────────────────────────────────────────────────────────┐
-│  Message sent to Slack                                      │
-│  "Hola, ¿cómo estás?"                                      │
-│  (Translation, not original!)                              │
-└─────────────────────────────────────────────────────────────┘
-```
 
 ## Settings Control Flow
 

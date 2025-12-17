@@ -191,23 +191,26 @@
           translationElement.innerHTML = '<span class="slack-translator-loading">Translating...</span>';
           
           // Translate incoming message: from others' language to your language
-          translateText(messageText, othersLanguage, yourLanguage).then(function(translation) {
-            if (translation && translation !== messageText) {
-              translationElement.innerHTML = `
-                <span class="slack-translator-label">Translation:</span>
-                <span class="slack-translator-text">${escapeHtml(translation)}</span>
-              `;
-              isTranslated = true;
-            } else {
-              translationElement.innerHTML = '<span class="slack-translator-text" style="color: #616061; font-style: italic;">No translation needed</span>';
-              isTranslated = true;
-            }
-            isTranslating = false;
-          }).catch(function(error) {
-            console.error('Translation error:', error);
-            translationElement.innerHTML = '<span class="slack-translator-text" style="color: #d32f2f; font-style: italic;">Translation error</span>';
-            isTranslating = false;
-          });
+          translateText(messageText, othersLanguage, yourLanguage)
+            .then(function(translation) {
+              if (translation && translation !== messageText) {
+                translationElement.innerHTML = `
+                  <span class="slack-translator-label">Translation:</span>
+                  <span class="slack-translator-text">${escapeHtml(translation)}</span>
+                `;
+                isTranslated = true;
+              } else {
+                translationElement.innerHTML = '<span class="slack-translator-text" style="color: #616061; font-style: italic;">No translation needed</span>';
+                isTranslated = true;
+              }
+            })
+            .catch(function(error) {
+              console.error('Translation error:', error);
+              translationElement.innerHTML = '<span class="slack-translator-text" style="color: #d32f2f; font-style: italic;">Translation error</span>';
+            })
+            .finally(function() {
+              isTranslating = false;
+            });
         }
       });
     }
