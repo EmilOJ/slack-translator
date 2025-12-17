@@ -4,7 +4,7 @@
 
 A Chrome extension that automatically translates Slack messages in real-time using DeepL's high-quality translation API.
 
-[Screencast from 2025-12-17 17-35-37.webm](https://github.com/user-attachments/assets/a2fae427-ae73-4f30-b6e2-0a2c799d980c)
+![Screencast from 2025-12-17 17-35-37](https://github.com/user-attachments/assets/5b31df54-ebb9-473f-aaa5-076fd7eb59e9)
 
 
 ## Features
