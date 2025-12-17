@@ -1,0 +1,178 @@
+{
+  "extensionName": {
+    "message": "Slack翻訳",
+    "description": "Name of the extension"
+  },
+  "extensionDescription": {
+    "message": "Slackメッセージをリアルタイムで自動翻訳",
+    "description": "Description of the extension"
+  },
+  "settingsTitle": {
+    "message": "⚡ Slack翻訳",
+    "description": "Title of the settings popup"
+  },
+  "enableTranslation": {
+    "message": "翻訳を有効にする",
+    "description": "Label for enable translation toggle"
+  },
+  "translateOutgoing": {
+    "message": "送信メッセージを翻訳",
+    "description": "Label for translate outgoing messages toggle"
+  },
+  "translateOutgoingDesc": {
+    "message": "有効にすると、元のメッセージの代わりに翻訳されたメッセージを送信します（プレビューが最初に表示されます）",
+    "description": "Description for translate outgoing messages"
+  },
+  "translationService": {
+    "message": "翻訳サービス",
+    "description": "Label for translation service dropdown"
+  },
+  "deeplOption": {
+    "message": "DeepL（APIキーが必要）",
+    "description": "DeepL option in translation service dropdown"
+  },
+  "deeplDescription": {
+    "message": "DeepLは高品質な翻訳を提供します",
+    "description": "Description for DeepL service"
+  },
+  "apiKeyLabel": {
+    "message": "APIキー",
+    "description": "Label for API key input field"
+  },
+  "apiKeyPlaceholder": {
+    "message": "APIキーを入力",
+    "description": "Placeholder text for API key input"
+  },
+  "apiKeyDescription": {
+    "message": "APIキーはローカルに保存され、共有されることはありません",
+    "description": "Description for API key security"
+  },
+  "yourLanguage": {
+    "message": "あなたの言語",
+    "description": "Label for your language dropdown"
+  },
+  "yourLanguageDesc": {
+    "message": "あなたのメッセージはこの言語から翻訳されます",
+    "description": "Description for your language setting"
+  },
+  "othersLanguage": {
+    "message": "相手の言語",
+    "description": "Label for others' language dropdown"
+  },
+  "othersLanguageDesc": {
+    "message": "相手のメッセージはこの言語から翻訳されます",
+    "description": "Description for others' language setting"
+  },
+  "saveSettings": {
+    "message": "設定を保存",
+    "description": "Text for save settings button"
+  },
+  "settingsSaved": {
+    "message": "設定が保存されました！変更はすぐに適用されます。",
+    "description": "Success message after saving settings"
+  },
+  "apiKeyRequired": {
+    "message": "選択した翻訳サービスのAPIキーを入力してください",
+    "description": "Error message when API key is missing"
+  },
+  "langAuto": {
+    "message": "自動検出",
+    "description": "Auto-detect option for language"
+  },
+  "langEnglish": {
+    "message": "英語",
+    "description": "English language option"
+  },
+  "langSpanish": {
+    "message": "スペイン語",
+    "description": "Spanish language option"
+  },
+  "langFrench": {
+    "message": "フランス語",
+    "description": "French language option"
+  },
+  "langGerman": {
+    "message": "ドイツ語",
+    "description": "German language option"
+  },
+  "langItalian": {
+    "message": "イタリア語",
+    "description": "Italian language option"
+  },
+  "langPortuguese": {
+    "message": "ポルトガル語",
+    "description": "Portuguese language option"
+  },
+  "langRussian": {
+    "message": "ロシア語",
+    "description": "Russian language option"
+  },
+  "langJapanese": {
+    "message": "日本語",
+    "description": "Japanese language option"
+  },
+  "langKorean": {
+    "message": "韓国語",
+    "description": "Korean language option"
+  },
+  "langChinese": {
+    "message": "中国語",
+    "description": "Chinese language option"
+  },
+  "langArabic": {
+    "message": "アラビア語",
+    "description": "Arabic language option"
+  },
+  "langHindi": {
+    "message": "ヒンディー語",
+    "description": "Hindi language option"
+  },
+  "langDutch": {
+    "message": "オランダ語",
+    "description": "Dutch language option"
+  },
+  "langPolish": {
+    "message": "ポーランド語",
+    "description": "Polish language option"
+  },
+  "langTurkish": {
+    "message": "トルコ語",
+    "description": "Turkish language option"
+  },
+  "uiLanguage": {
+    "message": "インターフェース言語",
+    "description": "Label for UI language selector"
+  },
+  "uiLanguageDesc": {
+    "message": "この拡張機能のインターフェースの言語を選択",
+    "description": "Description for UI language setting"
+  },
+  "uiLangEnglish": {
+    "message": "English (英語)",
+    "description": "English option for UI language"
+  },
+  "uiLangJapanese": {
+    "message": "日本語",
+    "description": "Japanese option for UI language"
+  },
+  "formality": {
+    "message": "翻訳の丁寧さ",
+    "description": "Label for formality selector"
+  },
+  "formalityDesc": {
+    "message": "翻訳のトーン（フォーマル・カジュアル）を制御します。対応言語：ドイツ語、フランス語、イタリア語、スペイン語、オランダ語、ポーランド語、ポルトガル語、日本語、ロシア語",
+    "description": "Description for formality setting"
+  },
+  "formalityDefault": {
+    "message": "デフォルト",
+    "description": "Default formality option"
+  },
+  "formalityPreferMore": {
+    "message": "フォーマル優先",
+    "description": "Prefer more formal option"
+  },
+  "formalityPreferLess": {
+    "message": "カジュアル優先",
+    "description": "Prefer more informal option"
+  }
+}

@@ -14,6 +14,7 @@
   let translationProvider = 'deepl';
   let apiKey = '';
   let translateOutgoing = true; // Translate outgoing messages before sending
+  let formality = 'prefer_more'; // Translation formality level
   let processedMessages = new Set();
   let lastInputValue = '';
   let lastTranslation = ''; // Store the last translation for sending
@@ -28,7 +29,7 @@
   // Load settings from storage
   if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync) {
     chrome.storage.sync.get(
-      ['enabled', 'yourLanguage', 'othersLanguage', 'sourceLanguage', 'targetLanguage', 'translationProvider', 'apiKey', 'translateOutgoing'],
+      ['enabled', 'yourLanguage', 'othersLanguage', 'sourceLanguage', 'targetLanguage', 'translationProvider', 'apiKey', 'translateOutgoing', 'formality'],
       function(result) {
         isEnabled = result.enabled !== undefined ? result.enabled : true;
         
@@ -52,6 +53,7 @@
         translationProvider = result.translationProvider || 'deepl';
         apiKey = result.apiKey || '';
         translateOutgoing = result.translateOutgoing !== undefined ? result.translateOutgoing : true;
+        formality = result.formality || 'prefer_more';
         
         if (isEnabled) {
           init();
@@ -79,6 +81,7 @@
       if (changes.translationProvider) translationProvider = changes.translationProvider.newValue;
       if (changes.apiKey) apiKey = changes.apiKey.newValue;
       if (changes.translateOutgoing !== undefined) translateOutgoing = changes.translateOutgoing.newValue;
+      if (changes.formality) formality = changes.formality.newValue;
     }
   });
 
@@ -640,10 +643,9 @@
     try {
       if (translationProvider === 'deepl' && apiKey) {
         return await translateWithDeepL(text, sourceLang, targetLang);
-      } else if (translationProvider === 'chatgpt' && apiKey) {
-        return await translateWithChatGPT(text, sourceLang, targetLang);
       } else {
-        return await translateWithMyMemory(text, sourceLang, targetLang);
+        console.error('DeepL API key is required');
+        return text;
       }
     } catch (error) {
       console.error('Translation error:', error);
@@ -651,16 +653,8 @@
     }
   }
 
-  async function translateWithMyMemory(text, sourceLang, targetLang) {
-    return sendTranslationRequest(text, sourceLang, targetLang, 'mymemory', '');
-  }
-
   async function translateWithDeepL(text, sourceLang, targetLang) {
     return sendTranslationRequest(text, sourceLang, targetLang, 'deepl', apiKey);
-  }
-
-  async function translateWithChatGPT(text, sourceLang, targetLang) {
-    return sendTranslationRequest(text, sourceLang, targetLang, 'chatgpt', apiKey);
   }
 
   // Helper function to send translation requests to background script
@@ -673,7 +667,8 @@
           sourceLang: sourceLang,
           targetLang: targetLang,
           provider: provider,
-          apiKey: apiKey
+          apiKey: apiKey,
+          formality: formality
         },
         (response) => {
           if (chrome.runtime.lastError) {

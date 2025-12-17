@@ -105,7 +105,7 @@ function sleep(ms) {
 
 // Handle translation requests based on provider
 async function handleTranslationRequest(request) {
-  const { text, sourceLang, targetLang, provider, apiKey } = request;
+  const { text, sourceLang, targetLang, provider, apiKey, formality } = request;
   
   if (!text || text.length < 2) {
     return text;
@@ -113,11 +113,9 @@ async function handleTranslationRequest(request) {
   
   try {
     if (provider === 'deepl' && apiKey) {
-      return await translateWithDeepL(text, sourceLang, targetLang, apiKey);
-    } else if (provider === 'chatgpt' && apiKey) {
-      return await translateWithChatGPT(text, sourceLang, targetLang, apiKey);
+      return await translateWithDeepL(text, sourceLang, targetLang, apiKey, formality);
     } else {
-      return await translateWithMyMemory(text, sourceLang, targetLang);
+      throw new Error('DeepL API key is required. Please configure your API key in the extension settings.');
     }
   } catch (error) {
     console.error('Background translation error:', error);
@@ -126,7 +124,7 @@ async function handleTranslationRequest(request) {
 }
 
 // DeepL translation function
-async function translateWithDeepL(text, sourceLang, targetLang, apiKey) {
+async function translateWithDeepL(text, sourceLang, targetLang, apiKey, formality) {
   try {
     // Determine API endpoint based on API key type
     // Free API keys end with ':fx', Pro keys don't
@@ -151,7 +149,7 @@ async function translateWithDeepL(text, sourceLang, targetLang, apiKey) {
     const body = new URLSearchParams({
       'text': text,
       'target_lang': targetLangDeepL,
-      'formality': 'prefer_more'
+      'formality': formality || 'prefer_more'
     });
     
     // Add source language if not auto-detect
@@ -182,71 +180,6 @@ async function translateWithDeepL(text, sourceLang, targetLang, apiKey) {
     throw new Error('Translation failed: Invalid response from DeepL');
   } catch (error) {
     console.error('DeepL translation error:', error);
-    throw error;
-  }
-}
-
-// ChatGPT translation function
-async function translateWithChatGPT(text, sourceLang, targetLang, apiKey) {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
-    },
-    body: JSON.stringify({
-      model: 'gpt-3.5-turbo',
-      messages: [
-        {
-          role: 'system',
-          content: `You are a translator. Translate the following text to ${targetLang}. Only return the translation, nothing else.`
-        },
-        {
-          role: 'user',
-          content: text
-        }
-      ],
-      temperature: 0.3,
-      max_tokens: 500
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error(`ChatGPT API error: ${response.status}`);
-  }
-
-  const data = await response.json();
-  if (data.choices && data.choices[0] && data.choices[0].message) {
-    return data.choices[0].message.content.trim();
-  }
-  
-  throw new Error('ChatGPT translation failed');
-}
-
-// MyMemory translation function
-async function translateWithMyMemory(text, sourceLang, targetLang) {
-  try {
-    const source = sourceLang === 'auto' ? '' : sourceLang;
-    // When auto-detect, don't specify source language - let API detect it
-    const langPair = source ? `${source}|${targetLang}` : targetLang;
-    
-    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${langPair}`;
-    
-    const response = await fetch(url);
-    
-    if (!response.ok) {
-      throw new Error(`Translation API error: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    
-    if (data.responseStatus === 200 && data.responseData) {
-      return data.responseData.translatedText;
-    }
-    
-    throw new Error('Translation failed: Invalid response');
-  } catch (error) {
-    console.error('MyMemory translation error:', error);
     throw error;
   }
 }

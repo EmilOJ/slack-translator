@@ -19,8 +19,8 @@ global.chrome = {
           enabled: true,
           yourLanguage: 'en',
           othersLanguage: 'auto',
-          translationProvider: 'mymemory',
-          apiKey: '',
+          translationProvider: 'deepl',
+          apiKey: 'test-api-key',
           translateOutgoing: true
         });
       }),

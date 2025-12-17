@@ -1,0 +1,178 @@
+{
+  "extensionName": {
+    "message": "Slack Translator",
+    "description": "Name of the extension"
+  },
+  "extensionDescription": {
+    "message": "Automatically translate Slack messages in real-time",
+    "description": "Description of the extension"
+  },
+  "settingsTitle": {
+    "message": "⚡ Slack Translator",
+    "description": "Title of the settings popup"
+  },
+  "enableTranslation": {
+    "message": "Enable Translation",
+    "description": "Label for enable translation toggle"
+  },
+  "translateOutgoing": {
+    "message": "Translate Outgoing Messages",
+    "description": "Label for translate outgoing messages toggle"
+  },
+  "translateOutgoingDesc": {
+    "message": "When enabled, sends translated message instead of original (preview shown first)",
+    "description": "Description for translate outgoing messages"
+  },
+  "translationService": {
+    "message": "Translation Service",
+    "description": "Label for translation service dropdown"
+  },
+  "deeplOption": {
+    "message": "DeepL (Requires API Key)",
+    "description": "DeepL option in translation service dropdown"
+  },
+  "deeplDescription": {
+    "message": "DeepL provides high-quality translations",
+    "description": "Description for DeepL service"
+  },
+  "apiKeyLabel": {
+    "message": "API Key",
+    "description": "Label for API key input field"
+  },
+  "apiKeyPlaceholder": {
+    "message": "Enter API key",
+    "description": "Placeholder text for API key input"
+  },
+  "apiKeyDescription": {
+    "message": "Your API key is stored locally and never shared",
+    "description": "Description for API key security"
+  },
+  "yourLanguage": {
+    "message": "Your Language",
+    "description": "Label for your language dropdown"
+  },
+  "yourLanguageDesc": {
+    "message": "Your messages will be translated FROM this language",
+    "description": "Description for your language setting"
+  },
+  "othersLanguage": {
+    "message": "Others' Language",
+    "description": "Label for others' language dropdown"
+  },
+  "othersLanguageDesc": {
+    "message": "Their messages will be translated FROM this language",
+    "description": "Description for others' language setting"
+  },
+  "saveSettings": {
+    "message": "Save Settings",
+    "description": "Text for save settings button"
+  },
+  "settingsSaved": {
+    "message": "Settings saved! Changes will apply immediately.",
+    "description": "Success message after saving settings"
+  },
+  "apiKeyRequired": {
+    "message": "Please enter an API key for the selected translation service",
+    "description": "Error message when API key is missing"
+  },
+  "langAuto": {
+    "message": "Auto-detect",
+    "description": "Auto-detect option for language"
+  },
+  "langEnglish": {
+    "message": "English",
+    "description": "English language option"
+  },
+  "langSpanish": {
+    "message": "Spanish",
+    "description": "Spanish language option"
+  },
+  "langFrench": {
+    "message": "French",
+    "description": "French language option"
+  },
+  "langGerman": {
+    "message": "German",
+    "description": "German language option"
+  },
+  "langItalian": {
+    "message": "Italian",
+    "description": "Italian language option"
+  },
+  "langPortuguese": {
+    "message": "Portuguese",
+    "description": "Portuguese language option"
+  },
+  "langRussian": {
+    "message": "Russian",
+    "description": "Russian language option"
+  },
+  "langJapanese": {
+    "message": "Japanese",
+    "description": "Japanese language option"
+  },
+  "langKorean": {
+    "message": "Korean",
+    "description": "Korean language option"
+  },
+  "langChinese": {
+    "message": "Chinese",
+    "description": "Chinese language option"
+  },
+  "langArabic": {
+    "message": "Arabic",
+    "description": "Arabic language option"
+  },
+  "langHindi": {
+    "message": "Hindi",
+    "description": "Hindi language option"
+  },
+  "langDutch": {
+    "message": "Dutch",
+    "description": "Dutch language option"
+  },
+  "langPolish": {
+    "message": "Polish",
+    "description": "Polish language option"
+  },
+  "langTurkish": {
+    "message": "Turkish",
+    "description": "Turkish language option"
+  },
+  "uiLanguage": {
+    "message": "Interface Language",
+    "description": "Label for UI language selector"
+  },
+  "uiLanguageDesc": {
+    "message": "Choose the language for this extension's interface",
+    "description": "Description for UI language setting"
+  },
+  "uiLangEnglish": {
+    "message": "English",
+    "description": "English option for UI language"
+  },
+  "uiLangJapanese": {
+    "message": "日本語 (Japanese)",
+    "description": "Japanese option for UI language"
+  },
+  "formality": {
+    "message": "Translation Formality",
+    "description": "Label for formality selector"
+  },
+  "formalityDesc": {
+    "message": "Controls the tone of translations (formal or informal). Supported for: German, French, Italian, Spanish, Dutch, Polish, Portuguese, Japanese, and Russian.",
+    "description": "Description for formality setting"
+  },
+  "formalityDefault": {
+    "message": "Default",
+    "description": "Default formality option"
+  },
+  "formalityPreferMore": {
+    "message": "Prefer More Formal",
+    "description": "Prefer more formal option"
+  },
+  "formalityPreferLess": {
+    "message": "Prefer More Informal",
+    "description": "Prefer more informal option"
+  }
+}

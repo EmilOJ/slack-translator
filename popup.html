@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Slack Translator Settings</title>
+  <title data-i18n="extensionName">Slack Translator Settings</title>
   <style>
     body {
       width: 350px;
@@ -150,13 +150,24 @@
   </style>
 </head>
 <body>
-  <h1>⚡ Slack Translator</h1>
+  <h1 data-i18n="settingsTitle">⚡ Slack Translator</h1>
 
   <div class="status info" id="status" style="display: none;"></div>
 
   <div class="setting">
+    <label for="uiLanguage" data-i18n="uiLanguage">Interface Language</label>
+    <select id="uiLanguage">
+      <option value="en" data-i18n="uiLangEnglish">English</option>
+      <option value="ja" data-i18n="uiLangJapanese">日本語 (Japanese)</option>
+    </select>
+    <div class="description" data-i18n="uiLanguageDesc">Choose the language for this extension's interface</div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <div class="setting">
     <div class="toggle-container">
-      <label for="enabled">Enable Translation</label>
+      <label for="enabled" data-i18n="enableTranslation">Enable Translation</label>
       <label class="toggle">
         <input type="checkbox" id="enabled" checked>
         <span class="slider"></span>
@@ -166,83 +177,93 @@
 
   <div class="setting">
     <div class="toggle-container">
-      <label for="translateOutgoing">Translate Outgoing Messages</label>
+      <label for="translateOutgoing" data-i18n="translateOutgoing">Translate Outgoing Messages</label>
       <label class="toggle">
         <input type="checkbox" id="translateOutgoing" checked>
         <span class="slider"></span>
       </label>
     </div>
-    <div class="description">When enabled, sends translated message instead of original (preview shown first)</div>
+    <div class="description" data-i18n="translateOutgoingDesc">When enabled, sends translated message instead of original (preview shown first)</div>
   </div>
 
   <div class="section-divider"></div>
 
   <div class="setting">
-    <label for="translationProvider">Translation Service</label>
+    <label for="translationProvider" data-i18n="translationService">Translation Service</label>
     <select id="translationProvider">
-      <option value="deepl">DeepL (Requires API Key, Recommended)</option>
-      <option value="mymemory">MyMemory (Free, No API Key)</option>
-      <option value="chatgpt">ChatGPT (Requires API Key)</option>
+      <option value="deepl" data-i18n="deeplOption">DeepL (Requires API Key)</option>
     </select>
-    <div class="description">DeepL provides high-quality translations</div>
+    <div class="description" data-i18n="deeplDescription">DeepL provides high-quality translations</div>
   </div>
 
   <div id="apiKeySection">
     <div class="setting">
-      <label for="apiKey">API Key</label>
-      <input type="text" id="apiKey" placeholder="Enter API key">
-      <div class="description">Your API key is stored locally and never shared</div>
+      <label for="apiKey" data-i18n="apiKeyLabel">API Key</label>
+      <input type="text" id="apiKey" data-i18n-placeholder="apiKeyPlaceholder" placeholder="Enter API key">
+      <div class="description" data-i18n="apiKeyDescription">Your API key is stored locally and never shared</div>
     </div>
   </div>
 
   <div class="section-divider"></div>
 
   <div class="setting">
-    <label for="yourLanguage">Your Language</label>
-    <select id="yourLanguage">
-      <option value="en">English</option>
-      <option value="es">Spanish</option>
-      <option value="fr">French</option>
-      <option value="de">German</option>
-      <option value="it">Italian</option>
-      <option value="pt">Portuguese</option>
-      <option value="ru">Russian</option>
-      <option value="ja">Japanese</option>
-      <option value="ko">Korean</option>
-      <option value="zh">Chinese</option>
-      <option value="ar">Arabic</option>
-      <option value="hi">Hindi</option>
-      <option value="nl">Dutch</option>
-      <option value="pl">Polish</option>
-      <option value="tr">Turkish</option>
+    <label for="formality" data-i18n="formality">Translation Formality</label>
+    <select id="formality">
+      <option value="default" data-i18n="formalityDefault">Default</option>
+      <option value="prefer_more" data-i18n="formalityPreferMore">Prefer More Formal</option>
+      <option value="prefer_less" data-i18n="formalityPreferLess">Prefer More Informal</option>
     </select>
-    <div class="description">Your messages will be translated FROM this language</div>
+    <div class="description" data-i18n="formalityDesc">Controls the tone of translations (formal or informal). Supported for: German, French, Italian, Spanish, Dutch, Polish, Portuguese, Japanese, and Russian.</div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <div class="setting">
+    <label for="yourLanguage" data-i18n="yourLanguage">Your Language</label>
+    <select id="yourLanguage">
+      <option value="en" data-i18n="langEnglish">English</option>
+      <option value="es" data-i18n="langSpanish">Spanish</option>
+      <option value="fr" data-i18n="langFrench">French</option>
+      <option value="de" data-i18n="langGerman">German</option>
+      <option value="it" data-i18n="langItalian">Italian</option>
+      <option value="pt" data-i18n="langPortuguese">Portuguese</option>
+      <option value="ru" data-i18n="langRussian">Russian</option>
+      <option value="ja" data-i18n="langJapanese">Japanese</option>
+      <option value="ko" data-i18n="langKorean">Korean</option>
+      <option value="zh" data-i18n="langChinese">Chinese</option>
+      <option value="ar" data-i18n="langArabic">Arabic</option>
+      <option value="hi" data-i18n="langHindi">Hindi</option>
+      <option value="nl" data-i18n="langDutch">Dutch</option>
+      <option value="pl" data-i18n="langPolish">Polish</option>
+      <option value="tr" data-i18n="langTurkish">Turkish</option>
+    </select>
+    <div class="description" data-i18n="yourLanguageDesc">Your messages will be translated FROM this language</div>
   </div>
 
   <div class="setting">
-    <label for="othersLanguage">Others' Language</label>
+    <label for="othersLanguage" data-i18n="othersLanguage">Others' Language</label>
     <select id="othersLanguage">
-      <option value="auto">Auto-detect</option>
-      <option value="en">English</option>
-      <option value="es">Spanish</option>
-      <option value="fr">French</option>
-      <option value="de">German</option>
-      <option value="it">Italian</option>
-      <option value="pt">Portuguese</option>
-      <option value="ru">Russian</option>
-      <option value="ja">Japanese</option>
-      <option value="ko">Korean</option>
-      <option value="zh">Chinese</option>
-      <option value="ar">Arabic</option>
-      <option value="hi">Hindi</option>
-      <option value="nl">Dutch</option>
-      <option value="pl">Polish</option>
-      <option value="tr">Turkish</option>
+      <option value="auto" data-i18n="langAuto">Auto-detect</option>
+      <option value="en" data-i18n="langEnglish">English</option>
+      <option value="es" data-i18n="langSpanish">Spanish</option>
+      <option value="fr" data-i18n="langFrench">French</option>
+      <option value="de" data-i18n="langGerman">German</option>
+      <option value="it" data-i18n="langItalian">Italian</option>
+      <option value="pt" data-i18n="langPortuguese">Portuguese</option>
+      <option value="ru" data-i18n="langRussian">Russian</option>
+      <option value="ja" data-i18n="langJapanese">Japanese</option>
+      <option value="ko" data-i18n="langKorean">Korean</option>
+      <option value="zh" data-i18n="langChinese">Chinese</option>
+      <option value="ar" data-i18n="langArabic">Arabic</option>
+      <option value="hi" data-i18n="langHindi">Hindi</option>
+      <option value="nl" data-i18n="langDutch">Dutch</option>
+      <option value="pl" data-i18n="langPolish">Polish</option>
+      <option value="tr" data-i18n="langTurkish">Turkish</option>
     </select>
-    <div class="description">Their messages will be translated FROM this language</div>
+    <div class="description" data-i18n="othersLanguageDesc">Their messages will be translated FROM this language</div>
   </div>
 
-  <button id="saveButton">Save Settings</button>
+  <button id="saveButton" data-i18n="saveSettings">Save Settings</button>
 
   <script src="popup.js"></script>
 </body>
