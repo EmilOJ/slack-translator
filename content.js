@@ -80,7 +80,7 @@
       if (changes.othersLanguage) othersLanguage = changes.othersLanguage.newValue;
       if (changes.translationProvider) translationProvider = changes.translationProvider.newValue;
       if (changes.apiKey) apiKey = changes.apiKey.newValue;
-      if (changes.translateOutgoing !== undefined) translateOutgoing = changes.translateOutgoing.newValue;
+      if (changes.translateOutgoing) translateOutgoing = changes.translateOutgoing.newValue;
       if (changes.formality) formality = changes.formality.newValue;
     }
   });
