@@ -161,7 +161,7 @@ describe('UI Language Selector', () => {
               translationProvider: 'deepl',
               apiKey: 'test-key',
               yourLanguage: 'en',
-              othersLanguage: 'auto',
+              othersLanguage: 'ja',
               uiLanguage: 'en'
             });
           }),

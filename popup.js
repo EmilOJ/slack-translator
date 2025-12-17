@@ -180,7 +180,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Migrate: sourceLanguage was where we translate FROM, which is OTHERS' language for incoming
         othersLanguageSelect.value = result.sourceLanguage;
       } else {
-        othersLanguageSelect.value = 'auto';
+        othersLanguageSelect.value = 'ja';
       }
       
       formalitySelect.value = result.formality || 'prefer_more';

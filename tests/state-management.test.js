@@ -18,7 +18,7 @@ global.chrome = {
         callback({
           enabled: true,
           yourLanguage: 'en',
-          othersLanguage: 'auto',
+          othersLanguage: 'ja',
           translationProvider: 'deepl',
           apiKey: 'test-api-key',
           translateOutgoing: true

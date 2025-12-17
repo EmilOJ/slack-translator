@@ -10,7 +10,7 @@
 
   let isEnabled = true;
   let yourLanguage = 'en'; // Your language (user's language)
-  let othersLanguage = 'auto'; // Others' language (people you're communicating with)
+  let othersLanguage = 'ja'; // Others' language (people you're communicating with)
   let translationProvider = 'deepl';
   let apiKey = '';
   let translateOutgoing = true; // Translate outgoing messages before sending
