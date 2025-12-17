@@ -18,6 +18,8 @@
   let previewElement = null;
   let debounceTimer = null;
   let translationAccepted = false; // Flag to prevent re-translation after accepting
+  let isReplacingContent = false; // Flag to indicate programmatic content replacement
+  let isSendingMessage = false; // Flag to prevent re-triggering during send
 
   // Load settings from storage
   chrome.storage.sync.get(
@@ -344,9 +346,21 @@
   function handleInputChange(inputField) {
     if (!isEnabled) return;
 
+    // Skip if we're programmatically replacing content
+    if (isReplacingContent) {
+      return;
+    }
+
     const currentValue = inputField.textContent || inputField.value || '';
     
     if (currentValue === lastInputValue) return;
+    
+    // If user has manually changed the content after accepting a translation,
+    // reset the flag to allow new translations
+    if (translationAccepted && currentValue !== lastTranslation) {
+      translationAccepted = false;
+    }
+    
     lastInputValue = currentValue;
 
     // Clear previous debounce timer
@@ -354,14 +368,15 @@
       clearTimeout(debounceTimer);
     }
 
-    // If input is empty, remove preview and reset flag
+    // If input is empty, remove preview and reset all state
     if (!currentValue.trim()) {
       removePreview();
-      translationAccepted = false; // Reset flag when input is cleared
+      translationAccepted = false;
+      lastTranslation = '';
       return;
     }
 
-    // Don't translate if a translation has been accepted (prevents re-translation loop)
+    // Don't translate if a translation has been accepted and content hasn't changed
     if (translationAccepted) {
       return;
     }
@@ -467,10 +482,17 @@
   function replaceInputWithTranslation(inputField) {
     if (!lastTranslation) return;
     
-    translationAccepted = true; // Set flag to prevent re-translation
+    // Set flag to prevent re-translation
+    translationAccepted = true;
+    
+    // Replace content
     replaceInputContent(inputField, lastTranslation);
-    removePreview();
+    
+    // Update lastInputValue to match the new content
     lastInputValue = lastTranslation;
+    
+    // Remove preview
+    removePreview();
   }
 
   function removePreview() {
@@ -549,6 +571,9 @@
     document.addEventListener('keydown', function(e) {
       if (!isEnabled || !translateOutgoing) return;
       
+      // Skip if already sending a message to prevent double-send
+      if (isSendingMessage) return;
+      
       // Check if Enter was pressed (without Shift, which adds a new line)
       if (e.key === 'Enter' && !e.shiftKey) {
         const target = e.target;
@@ -564,6 +589,9 @@
           if (lastTranslation && lastTranslation !== originalText && originalText) {
             e.preventDefault();
             e.stopPropagation();
+            
+            // Set flag to prevent double-send
+            isSendingMessage = true;
             
             // Replace the content with the translation
             replaceInputContent(target, lastTranslation);
@@ -581,10 +609,21 @@
               });
               target.dispatchEvent(enterEvent);
               
-              // Clear the stored translation and reset flag
+              // Reset all state immediately after dispatching
+              setTimeout(function() {
+                lastTranslation = '';
+                lastInputValue = '';
+                translationAccepted = false;
+                isSendingMessage = false;
+                removePreview();
+              }, 100);
+            }, DOM_UPDATE_DELAY_MS);
+          } else {
+            // No translation to apply, reset state after send
+            setTimeout(function() {
               lastTranslation = '';
               lastInputValue = '';
-              translationAccepted = false; // Reset flag after sending
+              translationAccepted = false;
               removePreview();
             }, DOM_UPDATE_DELAY_MS);
           }
@@ -603,6 +642,9 @@
           button.addEventListener('click', function(e) {
             if (!isEnabled || !translateOutgoing) return;
             
+            // Skip if already sending
+            if (isSendingMessage) return;
+            
             // Find the associated input field
             const form = button.closest('[data-qa="message_input"]')?.parentElement;
             if (!form) return;
@@ -617,6 +659,9 @@
               e.preventDefault();
               e.stopPropagation();
               
+              // Set flag to prevent double-send
+              isSendingMessage = true;
+              
               // Replace the content with the translation
               replaceInputContent(inputField, lastTranslation);
               
@@ -624,10 +669,21 @@
               setTimeout(function() {
                 button.click();
                 
-                // Clear the stored translation and reset flag
+                // Reset all state immediately after clicking
+                setTimeout(function() {
+                  lastTranslation = '';
+                  lastInputValue = '';
+                  translationAccepted = false;
+                  isSendingMessage = false;
+                  removePreview();
+                }, 100);
+              }, DOM_UPDATE_DELAY_MS);
+            } else {
+              // No translation to apply, reset state after send
+              setTimeout(function() {
                 lastTranslation = '';
                 lastInputValue = '';
-                translationAccepted = false; // Reset flag after sending
+                translationAccepted = false;
                 removePreview();
               }, DOM_UPDATE_DELAY_MS);
             }
@@ -643,6 +699,9 @@
   }
 
   function replaceInputContent(inputField, newText) {
+    // Set flag to prevent input event handler from running
+    isReplacingContent = true;
+    
     // Clear existing content
     inputField.innerHTML = '';
     
@@ -661,6 +720,11 @@
     
     // Trigger input event so Slack knows the content changed
     inputField.dispatchEvent(new Event('input', { bubbles: true }));
+    
+    // Reset flag after a brief delay to ensure event has finished processing
+    setTimeout(function() {
+      isReplacingContent = false;
+    }, 50);
   }
 
   console.log('Slack Translator: Content script loaded');
