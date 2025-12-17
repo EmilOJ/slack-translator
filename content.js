@@ -450,6 +450,13 @@
       
       // Detect Enter key (message send)
       if (e.key === 'Enter' && !e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey) {
+        // Clear any pending debounce timer to prevent translation preview from appearing
+        if (debounceTimer) {
+          clearTimeout(debounceTimer);
+          debounceTimer = null;
+        }
+        // Immediately remove preview on send
+        removePreview();
         // Reset state after a delay to allow message to be sent
         setTimeout(function() {
           resetTranslationState();
@@ -461,8 +468,9 @@
     // (Slack clears the input field after sending)
     const sendObserver = new MutationObserver(function(mutations) {
       const currentContent = (inputField.textContent || '').trim();
-      // If input was cleared (likely after send), reset state and remove preview
+      // If input was cleared (likely after send), reset state and remove preview immediately
       if (!currentContent && (translationAccepted || previewElement)) {
+        removePreview();
         setTimeout(function() {
           resetTranslationState();
         }, STATE_RESET_DELAY_MS);
@@ -528,6 +536,13 @@
       return;
     }
 
+    // Check if input field is still populated (might have been cleared after sending)
+    const currentValue = (inputField.textContent || '').trim();
+    if (!currentValue) {
+      removePreview();
+      return;
+    }
+
     // Find the input container - we need to insert in a fixed space
     const inputContainer = findInputContainer(inputField);
     if (!inputContainer) return;
@@ -575,6 +590,13 @@
 
     // Translate outgoing message: from your language to others' language
     translateText(text, yourLanguage, othersLanguage).then(function(translation) {
+      // Check if input is still populated - if empty, don't update preview (message was sent)
+      const currentValue = (inputField.textContent || '').trim();
+      if (!currentValue) {
+        removePreview();
+        return;
+      }
+      
       if (translation && translation !== text) {
         lastTranslation = translation; // Store for sending
         const label = translateOutgoing ? 'Will send:' : 'Preview:';
@@ -588,6 +610,12 @@
       }
     }).catch(function(error) {
       console.error('Preview translation error:', error);
+      // Check if input is still populated before showing error
+      const currentValue = (inputField.textContent || '').trim();
+      if (!currentValue) {
+        removePreview();
+        return;
+      }
       lastTranslation = text; // On error, use original
       previewElement.innerHTML = '<span class="slack-translator-text" style="color: #d32f2f; font-style: italic;">Translation error</span>';
     });
