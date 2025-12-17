@@ -30,6 +30,24 @@ Formality is supported for: German, French, Italian, Spanish, Dutch, Polish, Por
 
 ## Installation
 
+### From Release (Recommended)
+
+1. Go to the [Releases page](https://github.com/EmilOJ/slack-translator/releases)
+
+2. Download the latest `slack-translator-v*.zip` file
+
+3. Extract the ZIP file to a location on your computer
+
+4. Open Chrome and navigate to `chrome://extensions/`
+
+5. Enable "Developer mode" (toggle in the top-right corner)
+
+6. Click "Load unpacked"
+
+7. Select the extracted folder
+
+8. The extension icon should appear in your Chrome toolbar!
+
 ### From Source (Development)
 
 1. Clone this repository:
