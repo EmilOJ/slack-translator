@@ -50,7 +50,8 @@ function getLocalizedMessage(messageName, lang) {
       'formalityDesc': 'Controls the tone of translations (formal or informal). Supported for: German, French, Italian, Spanish, Dutch, Polish, Portuguese, Japanese, and Russian.',
       'formalityDefault': 'Default',
       'formalityPreferMore': 'Prefer More Formal',
-      'formalityPreferLess': 'Prefer More Informal'
+      'formalityPreferLess': 'Prefer More Informal',
+      'settingsSavedButton': 'Settings Saved!'
     },
     'ja': {
       'extensionName': 'Slack翻訳',
@@ -95,7 +96,8 @@ function getLocalizedMessage(messageName, lang) {
       'formalityDesc': '翻訳のトーン（フォーマル・カジュアル）を制御します。対応言語：ドイツ語、フランス語、イタリア語、スペイン語、オランダ語、ポーランド語、ポルトガル語、日本語、ロシア語',
       'formalityDefault': 'デフォルト',
       'formalityPreferMore': 'フォーマル優先',
-      'formalityPreferLess': 'カジュアル優先'
+      'formalityPreferLess': 'カジュアル優先',
+      'settingsSavedButton': '設定を保存しました！'
     }
   };
 
@@ -151,10 +153,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const browserLang = chrome.i18n.getUILanguage().split('-')[0];
         uiLang = (browserLang === 'ja') ? 'ja' : 'en';
       }
-      uiLanguageSelect.value = uiLang;
-      
-      // Apply localization with the determined language
+      // Apply localization with the determined language FIRST
       localizeUI(uiLang);
+      
+      // Then set all the select values AFTER localization to avoid them being reset
+      uiLanguageSelect.value = uiLang;
       enabledCheckbox.checked = result.enabled !== undefined ? result.enabled : true;
       translateOutgoingCheckbox.checked = result.translateOutgoing !== undefined ? result.translateOutgoing : true;
       translationProviderSelect.value = result.translationProvider || 'deepl';
@@ -232,8 +235,25 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
+    // Disable button during save
+    saveButton.disabled = true;
+    
     chrome.storage.sync.set(settings, function() {
-      showStatus(getLocalizedMessage('settingsSaved', currentUILanguage), 'success');
+      // Check if save was successful (no chrome.runtime.lastError)
+      if (chrome.runtime.lastError) {
+        // Save failed, show error
+        showStatus(getLocalizedMessage('apiKeyRequired', currentUILanguage), 'error');
+        saveButton.disabled = false;
+      } else {
+        // Save successful, update button text temporarily
+        const originalText = saveButton.textContent;
+        saveButton.textContent = getLocalizedMessage('settingsSavedButton', currentUILanguage);
+        
+        setTimeout(function() {
+          saveButton.textContent = originalText;
+          saveButton.disabled = false;
+        }, 3000);
+      }
       
       // Note: Content script listens for storage changes via chrome.storage.onChanged
       // So we don't need to reload tabs - changes apply dynamically

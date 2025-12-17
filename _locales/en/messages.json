@@ -174,5 +174,9 @@
   "formalityPreferLess": {
     "message": "Prefer More Informal",
     "description": "Prefer more informal option"
+  },
+  "settingsSavedButton": {
+    "message": "Settings Saved!",
+    "description": "Text shown on button when settings are successfully saved"
   }
 }

@@ -174,5 +174,9 @@
   "formalityPreferLess": {
     "message": "カジュアル優先",
     "description": "Prefer more informal option"
+  },
+  "settingsSavedButton": {
+    "message": "設定を保存しました！",
+    "description": "Text shown on button when settings are successfully saved"
   }
 }
