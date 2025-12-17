@@ -5,6 +5,8 @@
   // Configuration constants
   const DEBOUNCE_DELAY_MS = 1000; // Wait time before translating while typing (increased from 500ms)
   const DOM_UPDATE_DELAY_MS = 50; // Wait for DOM updates before sending
+  const STATE_RESET_DELAY_MS = 100; // Wait for events to complete before resetting state
+  const CONTENT_REPLACEMENT_DELAY_MS = 50; // Wait for input event to finish processing after content replacement
 
   let isEnabled = true;
   let yourLanguage = 'en'; // Your language (user's language)
@@ -501,6 +503,14 @@
     previewElement = null;
   }
 
+  function resetTranslationState() {
+    lastTranslation = '';
+    lastInputValue = '';
+    translationAccepted = false;
+    isSendingMessage = false;
+    removePreview();
+  }
+
   // Translation function - now takes source and target languages
   async function translateText(text, sourceLang, targetLang) {
     if (!text || text.length < 2) return text;
@@ -611,12 +621,8 @@
               
               // Reset all state immediately after dispatching
               setTimeout(function() {
-                lastTranslation = '';
-                lastInputValue = '';
-                translationAccepted = false;
-                isSendingMessage = false;
-                removePreview();
-              }, 100);
+                resetTranslationState();
+              }, STATE_RESET_DELAY_MS);
             }, DOM_UPDATE_DELAY_MS);
           } else {
             // No translation to apply, reset state after send
@@ -671,12 +677,8 @@
                 
                 // Reset all state immediately after clicking
                 setTimeout(function() {
-                  lastTranslation = '';
-                  lastInputValue = '';
-                  translationAccepted = false;
-                  isSendingMessage = false;
-                  removePreview();
-                }, 100);
+                  resetTranslationState();
+                }, STATE_RESET_DELAY_MS);
               }, DOM_UPDATE_DELAY_MS);
             } else {
               // No translation to apply, reset state after send
@@ -724,7 +726,7 @@
     // Reset flag after a brief delay to ensure event has finished processing
     setTimeout(function() {
       isReplacingContent = false;
-    }, 50);
+    }, CONTENT_REPLACEMENT_DELAY_MS);
   }
 
   console.log('Slack Translator: Content script loaded');
