@@ -357,12 +357,6 @@
     
     if (currentValue === lastInputValue) return;
     
-    // If user has manually changed the content after accepting a translation,
-    // reset the flag to allow new translations
-    if (translationAccepted && currentValue !== lastTranslation) {
-      translationAccepted = false;
-    }
-    
     lastInputValue = currentValue;
 
     // Clear previous debounce timer
@@ -378,7 +372,7 @@
       return;
     }
 
-    // Don't translate if a translation has been accepted and content hasn't changed
+    // Don't translate if a translation has been accepted (until message is sent or input cleared)
     if (translationAccepted) {
       return;
     }
@@ -511,6 +505,13 @@
     removePreview();
   }
 
+  function resetTranslationStatePartial() {
+    lastTranslation = '';
+    lastInputValue = '';
+    translationAccepted = false;
+    removePreview();
+  }
+
   // Translation function - now takes source and target languages
   async function translateText(text, sourceLang, targetLang) {
     if (!text || text.length < 2) return text;
@@ -627,10 +628,7 @@
           } else {
             // No translation to apply, reset state after send
             setTimeout(function() {
-              lastTranslation = '';
-              lastInputValue = '';
-              translationAccepted = false;
-              removePreview();
+              resetTranslationStatePartial();
             }, DOM_UPDATE_DELAY_MS);
           }
         }
@@ -683,10 +681,7 @@
             } else {
               // No translation to apply, reset state after send
               setTimeout(function() {
-                lastTranslation = '';
-                lastInputValue = '';
-                translationAccepted = false;
-                removePreview();
+                resetTranslationStatePartial();
               }, DOM_UPDATE_DELAY_MS);
             }
           }, true);
