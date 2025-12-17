@@ -8,12 +8,15 @@
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
+    "canvas": "^2.11.2",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0"
   },
   "jest": {
     "testEnvironment": "jsdom",
-    "testMatch": ["**/?(*.)+(spec|test).js"],
+    "testMatch": [
+      "**/?(*.)+(spec|test).js"
+    ],
     "collectCoverageFrom": [
       "content.js"
     ]
