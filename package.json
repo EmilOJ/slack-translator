@@ -1,6 +1,6 @@
 {
   "name": "slack-translator-tests",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Tests for Slack Translator Chrome Extension",
   "scripts": {
     "test": "jest --verbose",
