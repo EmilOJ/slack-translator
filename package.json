@@ -13,7 +13,7 @@
   },
   "jest": {
     "testEnvironment": "jsdom",
-    "testMatch": ["**/__tests__/**/*.test.js"],
+    "testMatch": ["**/?(*.)+(spec|test).js"],
     "collectCoverageFrom": [
       "content.js"
     ]

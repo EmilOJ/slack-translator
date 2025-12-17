@@ -21,7 +21,7 @@
   let debounceTimer = null;
   let translationAccepted = false; // Flag to prevent re-translation after accepting
   let isReplacingContent = false; // Flag to indicate programmatic content replacement
-  let isSendingMessage = false; // Flag to prevent re-triggering during send
+  const messageTranslationState = new WeakMap(); // Store translation state per message element
 
   // Load settings from storage
   chrome.storage.sync.get(
@@ -43,7 +43,7 @@
       } else if (result.sourceLanguage !== undefined) {
         othersLanguage = result.sourceLanguage;
       } else {
-        othersLanguage = 'auto';
+        othersLanguage = 'ja';
       }
       
       translationProvider = result.translationProvider || 'deepl';
@@ -80,10 +80,8 @@
     observeMessages();
     // Start observing input field for typing
     observeInputField();
-    // Intercept message sending if translateOutgoing is enabled
-    if (translateOutgoing) {
-      interceptMessageSending();
-    }
+    // Set up event delegation for message clicks
+    setupMessageClickDelegation();
   }
 
   function cleanup() {
@@ -93,12 +91,7 @@
       previewElement.remove();
       previewElement = null;
     }
-    // Clear the processed data attributes - only look in message containers
-    const messageContainers = document.querySelectorAll('.c-message__message_blocks, .c-virtual_list__item');
-    messageContainers.forEach(container => {
-      const processed = container.querySelectorAll('[data-translator-processed]');
-      processed.forEach(el => el.removeAttribute('data-translator-processed'));
-    });
+    // Clear the processed messages set
     processedMessages.clear();
   }
 
@@ -131,15 +124,15 @@
   }
 
   function processMessage(messageElement) {
-    // Check if this element has already been processed using a data attribute
-    if (messageElement.getAttribute('data-translator-processed') === 'true') {
+    // Check if translation element already exists (more reliable than just checking attribute)
+    const existingTranslation = messageElement.querySelector('.slack-translator-translation');
+    if (existingTranslation) {
       return;
     }
 
     // Create a unique identifier for this message
     const messageId = getMessageId(messageElement);
     if (!messageId || processedMessages.has(messageId)) {
-      messageElement.setAttribute('data-translator-processed', 'true');
       return;
     }
 
@@ -159,9 +152,8 @@
     messageText = messageText.trim();
     if (!messageText || messageText.length < 2) return;
 
-    // Mark as processed with both the Set and data attribute
+    // Mark as processed
     processedMessages.add(messageId);
-    messageElement.setAttribute('data-translator-processed', 'true');
 
     // Find a good place to insert the translation
     const insertionPoint = findInsertionPoint(messageElement);
@@ -174,50 +166,14 @@
     
     insertionPoint.appendChild(translationElement);
 
-    // Add click handler to toggle translation visibility and translate on-demand
-    if (!messageElement.hasAttribute('data-translator-click-attached')) {
-      messageElement.setAttribute('data-translator-click-attached', 'true');
-      let isTranslated = false;
-      let isTranslating = false;
-      
-      messageElement.addEventListener('click', function(e) {
-        // Don't trigger if clicking on links or buttons within the message
-        if (e.target.tagName === 'A' || e.target.tagName === 'BUTTON' || e.target.closest('button') || e.target.closest('a')) {
-          return;
-        }
-        
-        // Toggle visibility
-        translationElement.classList.toggle('visible');
-        
-        // Only translate on first click when becoming visible
-        if (!isTranslated && !isTranslating && translationElement.classList.contains('visible')) {
-          isTranslating = true;
-          translationElement.innerHTML = '<span class="slack-translator-loading">Translating...</span>';
-          
-          // Translate incoming message: from others' language to your language
-          translateText(messageText, othersLanguage, yourLanguage)
-            .then(function(translation) {
-              if (translation && translation !== messageText) {
-                translationElement.innerHTML = `
-                  <span class="slack-translator-label">Translation:</span>
-                  <span class="slack-translator-text">${escapeHtml(translation)}</span>
-                `;
-                isTranslated = true;
-              } else {
-                translationElement.innerHTML = '<span class="slack-translator-text" style="color: #616061; font-style: italic;">No translation needed</span>';
-                isTranslated = true;
-              }
-            })
-            .catch(function(error) {
-              console.error('Translation error:', error);
-              translationElement.innerHTML = '<span class="slack-translator-text" style="color: #d32f2f; font-style: italic;">Translation error</span>';
-            })
-            .finally(function() {
-              isTranslating = false;
-            });
-        }
-      });
-    }
+    // Store message text in element's dataset for later retrieval
+    messageElement.dataset.translatorText = messageText;
+    
+    // Initialize translation state for this message
+    messageTranslationState.set(messageElement, {
+      isTranslated: false,
+      isTranslating: false
+    });
   }
 
   function getMessageId(element) {
@@ -290,6 +246,73 @@
     return messageElement;
   }
 
+  // Set up event delegation for message clicks
+  function setupMessageClickDelegation() {
+    document.body.addEventListener('click', function(e) {
+      if (!isEnabled) return;
+      
+      // Find if we clicked on or inside a message element
+      const messageElement = e.target.closest('.c-message__message_blocks[data-qa="message-text"]');
+      if (!messageElement) return;
+      
+      // Don't trigger if clicking on links or buttons within the message
+      if (e.target.tagName === 'A' || e.target.tagName === 'BUTTON' || 
+          e.target.closest('button') || e.target.closest('a')) {
+        return;
+      }
+      
+      // Find the translation element
+      const translationElement = messageElement.querySelector('.slack-translator-translation');
+      if (!translationElement) return;
+      
+      // Get or initialize state for this message
+      let state = messageTranslationState.get(messageElement);
+      if (!state) {
+        state = { isTranslated: false, isTranslating: false };
+        messageTranslationState.set(messageElement, state);
+      }
+      
+      // Toggle visibility
+      translationElement.classList.toggle('visible');
+      
+      // Only translate on first click when becoming visible
+      if (!state.isTranslated && !state.isTranslating && translationElement.classList.contains('visible')) {
+        state.isTranslating = true;
+        translationElement.innerHTML = '<span class="slack-translator-loading">Translating...</span>';
+        
+        // Get the message text from dataset
+        const messageText = messageElement.dataset.translatorText;
+        if (!messageText) {
+          translationElement.innerHTML = '<span class="slack-translator-text" style="color: #d32f2f; font-style: italic;">No message text found</span>';
+          state.isTranslating = false;
+          return;
+        }
+        
+        // Translate incoming message: from others' language to your language
+        translateText(messageText, othersLanguage, yourLanguage)
+          .then(function(translation) {
+            if (translation && translation !== messageText) {
+              translationElement.innerHTML = `
+                <span class="slack-translator-label">Translation:</span>
+                <span class="slack-translator-text">${escapeHtml(translation)}</span>
+              `;
+              state.isTranslated = true;
+            } else {
+              translationElement.innerHTML = '<span class="slack-translator-text" style="color: #616061; font-style: italic;">No translation needed</span>';
+              state.isTranslated = true;
+            }
+          })
+          .catch(function(error) {
+            console.error('Translation error:', error);
+            translationElement.innerHTML = '<span class="slack-translator-text" style="color: #d32f2f; font-style: italic;">Translation error</span>';
+          })
+          .finally(function() {
+            state.isTranslating = false;
+          });
+      }
+    });
+  }
+
   // Observe input field for typing
   function observeInputField() {
     const observer = new MutationObserver(function(mutations) {
@@ -333,16 +356,49 @@
       handleInputChange(inputField);
     });
 
-    // Add keyboard shortcut for Ctrl+Enter to replace with translation
+    // Add keyboard shortcut for Alt+Ctrl+Enter to replace with translation
     inputField.addEventListener('keydown', function(e) {
-      if (e.ctrlKey && e.key === 'Enter') {
+      if (e.altKey && e.ctrlKey && e.key === 'Enter') {
         e.preventDefault();
         e.stopPropagation();
         if (lastTranslation) {
           replaceInputWithTranslation(inputField);
         }
       }
+      
+      // Detect Enter key (message send)
+      if (e.key === 'Enter' && !e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey) {
+        // Reset state after a delay to allow message to be sent
+        setTimeout(function() {
+          resetTranslationState();
+        }, STATE_RESET_DELAY_MS);
+      }
     });
+    
+    // Also observe for DOM changes that indicate message was sent
+    // (Slack clears the input field after sending)
+    const sendObserver = new MutationObserver(function(mutations) {
+      const currentContent = (inputField.textContent || '').trim();
+      // If input was cleared (likely after send), reset state and remove preview
+      if (!currentContent && (translationAccepted || previewElement)) {
+        setTimeout(function() {
+          resetTranslationState();
+        }, STATE_RESET_DELAY_MS);
+      }
+    });
+    
+    sendObserver.observe(inputField, {
+      childList: true,
+      characterData: true,
+      subtree: true
+    });
+  }
+  
+  function resetTranslationState() {
+    translationAccepted = false;
+    lastTranslation = '';
+    lastInputValue = '';
+    removePreview();
   }
 
   function handleInputChange(inputField) {
@@ -369,6 +425,7 @@
       removePreview();
       translationAccepted = false;
       lastTranslation = '';
+      lastInputValue = '';
       return;
     }
 
@@ -410,7 +467,7 @@
       
       const replaceButton = document.createElement('button');
       replaceButton.className = 'slack-translator-replace-btn';
-      replaceButton.textContent = 'Replace (Ctrl+Enter)';
+      replaceButton.textContent = 'Replace (Ctrl+Alt+Enter)';
       replaceButton.title = 'Replace your text with the translation';
       replaceButton.addEventListener('click', function(e) {
         e.preventDefault();
@@ -497,21 +554,6 @@
     previewElement = null;
   }
 
-  function resetTranslationState() {
-    lastTranslation = '';
-    lastInputValue = '';
-    translationAccepted = false;
-    isSendingMessage = false;
-    removePreview();
-  }
-
-  function resetTranslationStatePartial() {
-    lastTranslation = '';
-    lastInputValue = '';
-    translationAccepted = false;
-    removePreview();
-  }
-
   // Translation function - now takes source and target languages
   async function translateText(text, sourceLang, targetLang) {
     if (!text || text.length < 2) return text;
@@ -574,125 +616,6 @@
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
-  }
-
-  // Intercept message sending to replace with translation
-  function interceptMessageSending() {
-    // Observe for send button and Enter key presses
-    document.addEventListener('keydown', function(e) {
-      if (!isEnabled || !translateOutgoing) return;
-      
-      // Skip if already sending a message to prevent double-send
-      if (isSendingMessage) return;
-      
-      // Check if Enter was pressed (without Shift, which adds a new line)
-      if (e.key === 'Enter' && !e.shiftKey) {
-        const target = e.target;
-        
-        // Check if we're in a Slack input field
-        if (target.classList.contains('ql-editor') && 
-            target.getAttribute('role') === 'textbox' &&
-            target.getAttribute('contenteditable') === 'true') {
-          
-          const originalText = target.textContent.trim();
-          
-          // If we have a translation ready and it's different from original
-          if (lastTranslation && lastTranslation !== originalText && originalText) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            // Set flag to prevent double-send
-            isSendingMessage = true;
-            
-            // Replace the content with the translation
-            replaceInputContent(target, lastTranslation);
-            
-            // Trigger the send after DOM updates are complete
-            setTimeout(function() {
-              // Simulate Enter key press to send the message
-              const enterEvent = new KeyboardEvent('keydown', {
-                key: 'Enter',
-                code: 'Enter',
-                keyCode: 13,
-                which: 13,
-                bubbles: true,
-                cancelable: true
-              });
-              target.dispatchEvent(enterEvent);
-              
-              // Reset all state immediately after dispatching
-              setTimeout(function() {
-                resetTranslationState();
-              }, STATE_RESET_DELAY_MS);
-            }, DOM_UPDATE_DELAY_MS);
-          } else {
-            // No translation to apply, reset state after send
-            setTimeout(function() {
-              resetTranslationStatePartial();
-            }, DOM_UPDATE_DELAY_MS);
-          }
-        }
-      }
-    }, true); // Use capture phase to intercept before Slack's handlers
-
-    // Also observe for send button clicks
-    const observer = new MutationObserver(function() {
-      const sendButtons = document.querySelectorAll('[data-qa="texty_send_button"]');
-      
-      sendButtons.forEach(function(button) {
-        if (!button.hasAttribute('data-translator-send-attached')) {
-          button.setAttribute('data-translator-send-attached', 'true');
-          
-          button.addEventListener('click', function(e) {
-            if (!isEnabled || !translateOutgoing) return;
-            
-            // Skip if already sending
-            if (isSendingMessage) return;
-            
-            // Find the associated input field
-            const form = button.closest('[data-qa="message_input"]')?.parentElement;
-            if (!form) return;
-            
-            const inputField = form.querySelector('.ql-editor[contenteditable="true"]');
-            if (!inputField) return;
-            
-            const originalText = inputField.textContent.trim();
-            
-            // If we have a translation ready
-            if (lastTranslation && lastTranslation !== originalText && originalText) {
-              e.preventDefault();
-              e.stopPropagation();
-              
-              // Set flag to prevent double-send
-              isSendingMessage = true;
-              
-              // Replace the content with the translation
-              replaceInputContent(inputField, lastTranslation);
-              
-              // Trigger the send after DOM updates are complete
-              setTimeout(function() {
-                button.click();
-                
-                // Reset all state immediately after clicking
-                setTimeout(function() {
-                  resetTranslationState();
-                }, STATE_RESET_DELAY_MS);
-              }, DOM_UPDATE_DELAY_MS);
-            } else {
-              // No translation to apply, reset state after send
-              setTimeout(function() {
-                resetTranslationStatePartial();
-              }, DOM_UPDATE_DELAY_MS);
-            }
-          }, true);
-        }
-      });
-    });
-
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true
-    });
   }
 
   function replaceInputContent(inputField, newText) {

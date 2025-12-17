@@ -1,8 +1,8 @@
 /* Slack Translator Styles */
 
 .slack-translator-translation {
-  margin-top: 8px;
-  padding: 8px 12px;
+  margin-top: 0;
+  padding: 0;
   background-color: #f8f9fa;
   border-left: 3px solid #4a90e2;
   border-radius: 4px;
@@ -20,6 +20,8 @@
   opacity: 1;
   visibility: visible;
   max-height: 500px;
+  margin-top: 8px;
+  padding: 8px 12px;
 }
 
 /* Make message blocks clickable to show translation */
