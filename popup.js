@@ -1,5 +1,8 @@
 // Popup script for Slack Translator settings
 
+// Constants
+const SAVE_FEEDBACK_DURATION = 3000; // Duration to show save success feedback in milliseconds
+
 // Current UI language cache
 let currentUILanguage = 'en';
 
@@ -155,10 +158,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const browserLang = chrome.i18n.getUILanguage().split('-')[0];
         uiLang = (browserLang === 'ja') ? 'ja' : 'en';
       }
-      // Apply localization with the determined language FIRST
+      // Apply localization with the determined language first
       localizeUI(uiLang);
       
-      // Then set all the select values AFTER localization to avoid them being reset
+      // Then set all the select values after localization to avoid them being reset
       uiLanguageSelect.value = uiLang;
       enabledCheckbox.checked = result.enabled !== undefined ? result.enabled : true;
       translateOutgoingCheckbox.checked = result.translateOutgoing !== undefined ? result.translateOutgoing : true;
@@ -254,7 +257,7 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(function() {
           saveButton.textContent = originalText;
           saveButton.disabled = false;
-        }, 3000);
+        }, SAVE_FEEDBACK_DURATION);
       }
       
       // Note: Content script listens for storage changes via chrome.storage.onChanged
