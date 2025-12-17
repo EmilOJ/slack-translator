@@ -23,38 +23,45 @@
   let isReplacingContent = false; // Flag to indicate programmatic content replacement
   const messageTranslationState = new WeakMap(); // Store translation state per message element
 
+  console.log('[Slack Translator] Content script loaded');
+
   // Load settings from storage
-  chrome.storage.sync.get(
-    ['enabled', 'yourLanguage', 'othersLanguage', 'sourceLanguage', 'targetLanguage', 'translationProvider', 'apiKey', 'translateOutgoing'],
-    function(result) {
-      isEnabled = result.enabled !== undefined ? result.enabled : true;
-      
-      // Handle migration from old settings (sourceLanguage/targetLanguage) to new (yourLanguage/othersLanguage)
-      if (result.yourLanguage !== undefined) {
-        yourLanguage = result.yourLanguage;
-      } else if (result.targetLanguage !== undefined) {
-        yourLanguage = result.targetLanguage;
-      } else {
-        yourLanguage = 'en';
+  if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync) {
+    chrome.storage.sync.get(
+      ['enabled', 'yourLanguage', 'othersLanguage', 'sourceLanguage', 'targetLanguage', 'translationProvider', 'apiKey', 'translateOutgoing'],
+      function(result) {
+        isEnabled = result.enabled !== undefined ? result.enabled : true;
+        
+        // Handle migration from old settings (sourceLanguage/targetLanguage) to new (yourLanguage/othersLanguage)
+        if (result.yourLanguage !== undefined) {
+          yourLanguage = result.yourLanguage;
+        } else if (result.targetLanguage !== undefined) {
+          yourLanguage = result.targetLanguage;
+        } else {
+          yourLanguage = 'en';
+        }
+        
+        if (result.othersLanguage !== undefined) {
+          othersLanguage = result.othersLanguage;
+        } else if (result.sourceLanguage !== undefined) {
+          othersLanguage = result.sourceLanguage;
+        } else {
+          othersLanguage = 'ja';
+        }
+        
+        translationProvider = result.translationProvider || 'deepl';
+        apiKey = result.apiKey || '';
+        translateOutgoing = result.translateOutgoing !== undefined ? result.translateOutgoing : true;
+        
+        if (isEnabled) {
+          init();
+        }
       }
-      
-      if (result.othersLanguage !== undefined) {
-        othersLanguage = result.othersLanguage;
-      } else if (result.sourceLanguage !== undefined) {
-        othersLanguage = result.sourceLanguage;
-      } else {
-        othersLanguage = 'ja';
-      }
-      
-      translationProvider = result.translationProvider || 'deepl';
-      apiKey = result.apiKey || '';
-      translateOutgoing = result.translateOutgoing !== undefined ? result.translateOutgoing : true;
-      
-      if (isEnabled) {
-        init();
-      }
-    }
-  );
+    );
+  } else {
+    // Chrome storage API not available, init with defaults
+    init();
+  }
 
   // Listen for settings changes
   chrome.storage.onChanged.addListener(function(changes, namespace) {
@@ -82,6 +89,19 @@
     observeInputField();
     // Set up event delegation for message clicks
     setupMessageClickDelegation();
+    
+    // Also process messages on scroll to catch virtually scrolled messages
+    let scrollTimeout;
+    document.addEventListener('scroll', function() {
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(function() {
+        if (!isEnabled) return;
+        const messages = document.querySelectorAll('.c-message__message_blocks[data-qa="message-text"]');
+        messages.forEach(function(messageElement) {
+          processMessage(messageElement);
+        });
+      }, 100);
+    }, true); // Use capture phase to catch all scroll events
   }
 
   function cleanup() {
@@ -91,20 +111,46 @@
       previewElement.remove();
       previewElement = null;
     }
+    // Clear the periodic check
+    if (window._slackTranslatorPeriodicCheck) {
+      clearInterval(window._slackTranslatorPeriodicCheck);
+      window._slackTranslatorPeriodicCheck = null;
+    }
     // Clear the processed messages set
     processedMessages.clear();
   }
 
   // Observe for new messages in Slack
   function observeMessages() {
+    // Process all messages periodically to catch any that were missed
+    const periodicCheck = setInterval(function() {
+      if (!isEnabled) return;
+      
+      const messages = document.querySelectorAll('.c-message__message_blocks[data-qa="message-text"]');
+      messages.forEach(function(messageElement) {
+        processMessage(messageElement);
+      });
+    }, 2000); // Check every 2 seconds
+
     const observer = new MutationObserver(function(mutations) {
       if (!isEnabled) return;
       
-      // Find all message elements - looking for the message blocks that contain text
-      const messages = document.querySelectorAll('.c-message__message_blocks[data-qa="message-text"]');
-      
-      messages.forEach(function(messageElement) {
-        processMessage(messageElement);
+      // Process messages in the mutated subtrees
+      mutations.forEach(function(mutation) {
+        // Check if any added nodes contain or are message elements
+        mutation.addedNodes.forEach(function(node) {
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            // Check if the node itself is a message
+            if (node.matches && node.matches('.c-message__message_blocks[data-qa="message-text"]')) {
+              processMessage(node);
+            }
+            // Check for messages within the node
+            const messages = node.querySelectorAll ? node.querySelectorAll('.c-message__message_blocks[data-qa="message-text"]') : [];
+            messages.forEach(function(messageElement) {
+              processMessage(messageElement);
+            });
+          }
+        });
       });
     });
 
@@ -121,6 +167,9 @@
         processMessage(messageElement);
       });
     }, 1000);
+    
+    // Store the interval ID for cleanup
+    window._slackTranslatorPeriodicCheck = periodicCheck;
   }
 
   function processMessage(messageElement) {
@@ -132,25 +181,55 @@
 
     // Create a unique identifier for this message
     const messageId = getMessageId(messageElement);
-    if (!messageId || processedMessages.has(messageId)) {
+    if (!messageId) {
+      return;
+    }
+    
+    // If we already processed this messageId but the element doesn't have the translation
+    // (happens when Slack replaces the DOM node), remove it from the set so we can re-process
+    if (processedMessages.has(messageId)) {
+      processedMessages.delete(messageId);
+    }
+
+    // Find the text content of the message - looking for p-rich_text_section elements and lists
+    const textElements = messageElement.querySelectorAll('.p-rich_text_section');
+    const listElements = messageElement.querySelectorAll('.p-rich_text_list');
+
+    if (textElements.length === 0 && listElements.length === 0) {
       return;
     }
 
-    // Find the text content of the message - looking for p-rich_text_section elements
-    const textElements = messageElement.querySelectorAll('.p-rich_text_section');
-
-    if (textElements.length === 0) return;
-
     let messageText = '';
+    
+    // Extract text from regular text sections
     textElements.forEach(function(el) {
       const text = el.textContent.trim();
       if (text) {
         messageText += text + ' ';
       }
     });
+    
+    // Extract text from list items (li elements directly)
+    listElements.forEach(function(listEl) {
+      const listItems = listEl.querySelectorAll('li');
+      listItems.forEach(function(item) {
+        // Get only the direct text content of this li, not nested uls
+        let itemText = '';
+        item.childNodes.forEach(function(node) {
+          if (node.nodeType === Node.TEXT_NODE) {
+            itemText += node.textContent.trim() + ' ';
+          }
+        });
+        if (itemText.trim()) {
+          messageText += itemText;
+        }
+      });
+    });
 
     messageText = messageText.trim();
-    if (!messageText || messageText.length < 2) return;
+    if (!messageText || messageText.length < 2) {
+      return;
+    }
 
     // Mark as processed
     processedMessages.add(messageId);
