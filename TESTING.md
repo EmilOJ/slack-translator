@@ -46,31 +46,62 @@ slack-translator/
 
 ## Slack Integration Test
 
-### Test 1: Message Translation
+### Test 1: Message Translation (On-Demand / Lazy Load)
 
 1. Open Slack in Chrome (https://app.slack.com or your workspace)
 2. Navigate to a channel with existing messages
 3. Wait 1-2 seconds after page load
 
 **Expected Result:** 
-- Translations appear below messages in colored boxes
-- Translation label says "Translation:"
+- Messages show "Click to translate" below them (no API call made yet)
 - Original message remains unchanged
-- Only messages with text are translated
+- Only messages with text show the translation prompt
+
+4. Click on a message to view its translation
+
+**Expected Result:**
+- Shows "Translating..." briefly (API call is made now)
+- Translation appears with label "Translation:"
+- Translation persists and doesn't translate again on subsequent clicks
+- Clicking again toggles visibility of the translation
 
 ### Test 2: Translation Preview While Typing
 
 1. Click in the message input box
 2. Type a message: "Hello, how are you today?"
-3. Wait 0.5 seconds without typing
+3. Wait 1 second without typing
 
 **Expected Result:**
 - Yellow preview box appears above input field
 - Preview label says "Will send:"
 - Shows translated text
-- Preview updates as you type (after 0.5s pause)
+- Preview updates as you type (after 1s pause)
 
-### Test 3: Different Languages
+### Test 3: Accepting Translation and Preventing Re-translation Loop
+
+1. Type a message: "Hello, how are you?"
+2. Wait 1 second for the translation preview to appear
+3. Click "Replace (Ctrl+Enter)" button or press Ctrl+Enter
+
+**Expected Result:**
+- Input field content is replaced with the translation
+- No new translation preview appears (prevents re-translation loop)
+- The replaced text stays as-is without being translated again
+
+4. Clear the entire input field (delete all text)
+
+**Expected Result:**
+- Translation preview disappears
+- You can now type a new message and translation will work again
+
+5. Type a new message and press Enter to send (without replacing)
+
+**Expected Result:**
+- If "Translate Outgoing Messages" is ON: translated version is sent
+- Translation flag resets after sending
+- You can type a new message and translation will work normally
+
+### Test 4: Different Languages
 
 1. Click extension icon
 2. Change target language to French

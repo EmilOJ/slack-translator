@@ -16,7 +16,7 @@ You type in your language → See preview → Press Enter → Translated message
 
 ## Detailed Flow Diagram
 
-### Incoming Messages
+### Incoming Messages (Lazy-Load / On-Demand Translation)
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  Message arrives in Slack                                   │
@@ -31,22 +31,33 @@ You type in your language → See preview → Press Enter → Translated message
                      │
                      ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  Sends to translation API                                   │
-│  (MyMemory or ChatGPT)                                     │
+│  Shows "Click to translate" prompt                          │
+│  (NO API call yet - saves API quota!)                      │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │ Click to translate                                   │   │
+│  └─────────────────────────────────────────────────────┘   │
+└────────────────────┬────────────────────────────────────────┘
+                     │
+                     ▼ (User clicks on message)
+┌─────────────────────────────────────────────────────────────┐
+│  First click: Send to translation API                       │
+│  (DeepL, MyMemory, or ChatGPT)                             │
 └────────────────────┬────────────────────────────────────────┘
                      │
                      ▼
 ┌─────────────────────────────────────────────────────────────┐
 │  Receives translation                                       │
 │  "Hello, how are you?"                                     │
+│  (Cached - no re-translation on subsequent clicks)         │
 └────────────────────┬────────────────────────────────────────┘
                      │
                      ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  Injects translation UI below original message              │
+│  Updates translation UI below original message              │
 │  ┌─────────────────────────────────────────────────────┐   │
 │  │ Translation: Hello, how are you?                    │   │
 │  └─────────────────────────────────────────────────────┘   │
+│  (Click again to toggle visibility)                         │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -56,18 +67,19 @@ You type in your language → See preview → Press Enter → Translated message
 ┌─────────────────────────────────────────────────────────────┐
 │  You type in input field                                    │
 │  "Hello, how are you?"                                     │
+│  (translationAccepted flag = false)                        │
 └────────────────────┬────────────────────────────────────────┘
                      │
                      ▼
 ┌─────────────────────────────────────────────────────────────┐
 │  Extension detects input change                             │
-│  Debounces for 500ms (waits for you to stop typing)       │
+│  Debounces for 1000ms (waits for you to stop typing)      │
 └────────────────────┬────────────────────────────────────────┘
                      │
                      ▼
 ┌─────────────────────────────────────────────────────────────┐
 │  Sends to translation API                                   │
-│  (MyMemory or ChatGPT)                                     │
+│  (DeepL, MyMemory, or ChatGPT)                             │
 └────────────────────┬────────────────────────────────────────┘
                      │
                      ▼
@@ -82,31 +94,39 @@ You type in your language → See preview → Press Enter → Translated message
 │  Shows preview above input field                            │
 │  ┌─────────────────────────────────────────────────────┐   │
 │  │ Will send: Hola, ¿cómo estás?                       │   │
+│  │ [Replace (Ctrl+Enter)]                               │   │
 │  └─────────────────────────────────────────────────────┘   │
 │  ┌─────────────────────────────────────────────────────┐   │
 │  │ Hello, how are you?   [Send]                        │   │
 │  └─────────────────────────────────────────────────────┘   │
 └────────────────────┬────────────────────────────────────────┘
                      │
-                     ▼
-┌─────────────────────────────────────────────────────────────┐
-│  You press Enter or click Send                              │
-└────────────────────┬────────────────────────────────────────┘
-                     │
-                     ▼
-┌─────────────────────────────────────────────────────────────┐
-│  Extension intercepts the send action                       │
-│  - Prevents default send behavior                          │
-│  - Replaces input content with lastTranslation             │
-│  - Triggers send again                                     │
-└────────────────────┬────────────────────────────────────────┘
-                     │
-                     ▼
-┌─────────────────────────────────────────────────────────────┐
-│  Message sent to Slack                                      │
-│  "Hola, ¿cómo estás?"                                      │
-│  (Translation, not original!)                              │
-└─────────────────────────────────────────────────────────────┘
+      ┌──────────────┴──────────────┐
+      │                             │
+      ▼ (Option A: Replace)         ▼ (Option B: Send directly)
+┌──────────────────────────┐  ┌────────────────────────────────┐
+│ Click Replace button or  │  │ Press Enter or click Send      │
+│ press Ctrl+Enter         │  └───────────┬────────────────────┘
+└──────────┬───────────────┘            │
+           │                            ▼
+           ▼                  ┌─────────────────────────────────┐
+┌──────────────────────────┐  │ Extension intercepts send       │
+│ Replace input content    │  │ - Prevents default send         │
+│ with translation         │  │ - Replaces with lastTranslation │
+│ SET translationAccepted  │  │ - Triggers send                 │
+│ = true                   │  │ - Resets translationAccepted    │
+│ (NO re-translation!)     │  └───────────┬─────────────────────┘
+└──────────┬───────────────┘            │
+           │                            │
+           │ Type more or send?         │
+           │                            │
+           ▼ (Clear input)              ▼
+┌──────────────────────────┐  ┌─────────────────────────────────┐
+│ Input field cleared      │  │  Message sent to Slack          │
+│ Reset translationAccepted│  │  "Hola, ¿cómo estás?"          │
+│ = false                  │  │  (Translation, not original!)   │
+│ Ready for new message    │  └─────────────────────────────────┘
+└──────────────────────────┘
 ```
 
 ## Settings Control Flow

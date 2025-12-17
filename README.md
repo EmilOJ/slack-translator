@@ -78,7 +78,15 @@ A Chrome extension that automatically translates Slack messages in real-time. Pe
 
 2. Navigate to any channel or DM
 
-3. Messages will automatically be translated and the translation will appear below the original message in a subtle colored box
+3. Messages will show "Click to translate" below them
+
+4. **Click on a message** to translate it on-demand (saves API calls!)
+
+5. The translation appears below the original message
+
+6. Click again to toggle the translation visibility
+
+**Why on-demand?** To save your API quota! Translations are only fetched when you actually need them.
 
 ### Translation Preview While Typing
 
@@ -86,15 +94,19 @@ A Chrome extension that automatically translates Slack messages in real-time. Pe
 
 2. Start typing your message in your language
 
-3. After a brief pause (0.5 seconds), a translation preview will appear above the input field showing "Will send: [translated text]"
+3. After a brief pause (1 second), a translation preview will appear above the input field showing "Will send: [translated text]"
 
 4. Continue typing or editing - the preview updates automatically
 
-5. When you're happy with the translation, press Enter or click Send
+5. **Optional:** Click "Replace (Ctrl+Enter)" to replace your text with the translation before sending
+   - This prevents the extension from trying to translate the already-translated text again
+   - After replacing, the text won't be re-translated until you send or clear the input
 
-6. **If "Translate Outgoing Messages" is ON**: The translated version is sent (not your original text)
+6. When you're happy with the translation, press Enter or click Send
 
-7. **If "Translate Outgoing Messages" is OFF**: The preview is just informational; your original text is sent
+7. **If "Translate Outgoing Messages" is ON**: The translated version is sent (not your original text)
+
+8. **If "Translate Outgoing Messages" is OFF**: The preview is just informational; your original text is sent
 
 ### How Message Translation Works
 
@@ -106,8 +118,17 @@ A Chrome extension that automatically translates Slack messages in real-time. Pe
 
 **Scenario 2: You receive a message**
 - Someone sends: "Bonjour, comment allez-vous?" (in French)
-- You see the original message
+- You see the original message with "Click to translate" below it
+- Click on the message
 - Below it, you see: "Translation: Hello, how are you?"
+
+**Scenario 3: You accept a translation before sending**
+- You type: "Hello" (in English)
+- Preview shows: "Will send: Hola"
+- You click "Replace (Ctrl+Enter)"
+- Input now shows: "Hola"
+- No re-translation happens (prevents Hola -> Hola loop)
+- You can now send or continue editing
 
 ### Managing Settings
 

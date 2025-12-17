@@ -17,6 +17,7 @@
   let lastTranslation = ''; // Store the last translation for sending
   let previewElement = null;
   let debounceTimer = null;
+  let translationAccepted = false; // Flag to prevent re-translation after accepting
 
   // Load settings from storage
   chrome.storage.sync.get(
@@ -162,39 +163,57 @@
     const insertionPoint = findInsertionPoint(messageElement);
     if (!insertionPoint) return;
 
-    // Create translation element
+    // Create translation element (but don't translate yet)
     const translationElement = document.createElement('div');
     translationElement.className = 'slack-translator-translation';
-    translationElement.innerHTML = '<span class="slack-translator-loading">Translating...</span>';
+    translationElement.innerHTML = '<span class="slack-translator-label">Click to translate</span>';
     
     insertionPoint.appendChild(translationElement);
 
-    // Add click handler to toggle translation visibility (only if not already attached)
+    // Add click handler to toggle translation visibility and translate on-demand
     if (!messageElement.hasAttribute('data-translator-click-attached')) {
       messageElement.setAttribute('data-translator-click-attached', 'true');
+      let isTranslated = false;
+      let isTranslating = false;
+      
       messageElement.addEventListener('click', function(e) {
         // Don't trigger if clicking on links or buttons within the message
         if (e.target.tagName === 'A' || e.target.tagName === 'BUTTON' || e.target.closest('button') || e.target.closest('a')) {
           return;
         }
+        
+        // Toggle visibility
         translationElement.classList.toggle('visible');
+        
+        // Only translate on first click when becoming visible
+        if (!isTranslated && !isTranslating && translationElement.classList.contains('visible')) {
+          isTranslating = true;
+          translationElement.innerHTML = '<span class="slack-translator-loading">Translating...</span>';
+          
+          // Translate incoming message: from others' language to your language
+          translateText(messageText, othersLanguage, yourLanguage)
+            .then(function(translation) {
+              if (translation && translation !== messageText) {
+                translationElement.innerHTML = `
+                  <span class="slack-translator-label">Translation:</span>
+                  <span class="slack-translator-text">${escapeHtml(translation)}</span>
+                `;
+                isTranslated = true;
+              } else {
+                translationElement.innerHTML = '<span class="slack-translator-text" style="color: #616061; font-style: italic;">No translation needed</span>';
+                isTranslated = true;
+              }
+            })
+            .catch(function(error) {
+              console.error('Translation error:', error);
+              translationElement.innerHTML = '<span class="slack-translator-text" style="color: #d32f2f; font-style: italic;">Translation error</span>';
+            })
+            .finally(function() {
+              isTranslating = false;
+            });
+        }
       });
     }
-
-    // Translate incoming message: from others' language to your language
-    translateText(messageText, othersLanguage, yourLanguage).then(function(translation) {
-      if (translation && translation !== messageText) {
-        translationElement.innerHTML = `
-          <span class="slack-translator-label">Translation:</span>
-          <span class="slack-translator-text">${escapeHtml(translation)}</span>
-        `;
-      } else {
-        translationElement.remove();
-      }
-    }).catch(function(error) {
-      console.error('Translation error:', error);
-      translationElement.remove();
-    });
   }
 
   function getMessageId(element) {
@@ -335,9 +354,15 @@
       clearTimeout(debounceTimer);
     }
 
-    // If input is empty, remove preview
+    // If input is empty, remove preview and reset flag
     if (!currentValue.trim()) {
       removePreview();
+      translationAccepted = false; // Reset flag when input is cleared
+      return;
+    }
+
+    // Don't translate if a translation has been accepted (prevents re-translation loop)
+    if (translationAccepted) {
       return;
     }
 
@@ -442,6 +467,7 @@
   function replaceInputWithTranslation(inputField) {
     if (!lastTranslation) return;
     
+    translationAccepted = true; // Set flag to prevent re-translation
     replaceInputContent(inputField, lastTranslation);
     removePreview();
     lastInputValue = lastTranslation;
@@ -555,9 +581,10 @@
               });
               target.dispatchEvent(enterEvent);
               
-              // Clear the stored translation
+              // Clear the stored translation and reset flag
               lastTranslation = '';
               lastInputValue = '';
+              translationAccepted = false; // Reset flag after sending
               removePreview();
             }, DOM_UPDATE_DELAY_MS);
           }
@@ -597,9 +624,10 @@
               setTimeout(function() {
                 button.click();
                 
-                // Clear the stored translation
+                // Clear the stored translation and reset flag
                 lastTranslation = '';
                 lastInputValue = '';
+                translationAccepted = false; // Reset flag after sending
                 removePreview();
               }, DOM_UPDATE_DELAY_MS);
             }
