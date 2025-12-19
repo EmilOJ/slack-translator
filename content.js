@@ -23,6 +23,8 @@
   let translationAccepted = false; // Flag to prevent re-translation after accepting
   let isReplacingContent = false; // Flag to indicate programmatic content replacement
   const messageTranslationState = new WeakMap(); // Store translation state per message element
+  let messageClickHandler = null; // Store reference to click handler for cleanup
+  let messageObserver = null; // Store reference to message observer for cleanup
 
   console.log('[Slack Translator] Content script loaded');
 
@@ -80,7 +82,14 @@
       if (changes.othersLanguage) othersLanguage = changes.othersLanguage.newValue;
       if (changes.translationProvider) translationProvider = changes.translationProvider.newValue;
       if (changes.apiKey) apiKey = changes.apiKey.newValue;
-      if (changes.translateOutgoing) translateOutgoing = changes.translateOutgoing.newValue;
+      if (changes.translateOutgoing) {
+        translateOutgoing = changes.translateOutgoing.newValue;
+        // Remove preview if translate outgoing is disabled
+        if (!translateOutgoing) {
+          removePreview();
+          resetTranslationState();
+        }
+      }
       if (changes.formality) formality = changes.formality.newValue;
     }
   });
@@ -119,6 +128,16 @@
       clearInterval(window._slackTranslatorPeriodicCheck);
       window._slackTranslatorPeriodicCheck = null;
     }
+    // Remove click event listener
+    if (messageClickHandler) {
+      document.body.removeEventListener('click', messageClickHandler);
+      messageClickHandler = null;
+    }
+    // Disconnect message observer
+    if (messageObserver) {
+      messageObserver.disconnect();
+      messageObserver = null;
+    }
     // Clear the processed messages set
     processedMessages.clear();
   }
@@ -135,7 +154,7 @@
       });
     }, 2000); // Check every 2 seconds
 
-    const observer = new MutationObserver(function(mutations) {
+    messageObserver = new MutationObserver(function(mutations) {
       if (!isEnabled) return;
       
       // Process messages in the mutated subtrees
@@ -158,7 +177,7 @@
     });
 
     // Start observing the document for changes
-    observer.observe(document.body, {
+    messageObserver.observe(document.body, {
       childList: true,
       subtree: true
     });
@@ -330,7 +349,13 @@
 
   // Set up event delegation for message clicks
   function setupMessageClickDelegation() {
-    document.body.addEventListener('click', function(e) {
+    // Remove existing handler if any
+    if (messageClickHandler) {
+      document.body.removeEventListener('click', messageClickHandler);
+    }
+    
+    // Create and store the handler
+    messageClickHandler = function(e) {
       if (!isEnabled) return;
       
       // Find if we clicked on or inside a message element
@@ -392,7 +417,10 @@
             state.isTranslating = false;
           });
       }
-    });
+    };
+    
+    // Add the handler to the document
+    document.body.addEventListener('click', messageClickHandler);
   }
 
   // Observe input field for typing
@@ -492,7 +520,7 @@
   }
 
   function handleInputChange(inputField) {
-    if (!isEnabled) return;
+    if (!isEnabled || !translateOutgoing) return;
 
     // Skip if we're programmatically replacing content
     if (isReplacingContent) {

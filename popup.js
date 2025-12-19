@@ -184,8 +184,9 @@ document.addEventListener('DOMContentLoaded', function() {
       
       if (result.othersLanguage !== undefined) {
         othersLanguageSelect.value = result.othersLanguage;
-      } else if (result.sourceLanguage !== undefined) {
+      } else if (result.sourceLanguage !== undefined && result.sourceLanguage !== 'auto') {
         // Migrate: sourceLanguage was where we translate FROM, which is OTHERS' language for incoming
+        // Skip 'auto' as it's not a valid option in the select
         othersLanguageSelect.value = result.sourceLanguage;
       } else {
         othersLanguageSelect.value = 'ja';

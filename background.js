@@ -14,8 +14,8 @@ chrome.runtime.onInstalled.addListener(function(details) {
       enabled: true,
       translateOutgoing: true,
       translationProvider: 'deepl',
-      sourceLanguage: 'auto',
-      targetLanguage: 'en',
+      yourLanguage: 'en',
+      othersLanguage: 'ja',
       apiKey: ''
     });
     
